@@ -1,11 +1,127 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<title>Moje Status Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Můj Simulátorový Rozcestník</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* Cesta k tvému obrázku */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('pozadi.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* Obrázek se při skrolování nehýbe */
+            background-repeat: no-repeat;
+    
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .container {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: rgba(30, 30, 30, 0.85); /* Poloprůhledné pozadí karty */
+            backdrop-filter: blur(10px); /* Efekt rozmazaného skla za kartou */
+            width: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: white;
+            border: 1px solid #333;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3);
+            border-color: var(--primary);
+        }
+
+        .card-image {
+            height: 180px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            /* Zde můžete později nahradit barvu obrázkem: 
+               background: url('cesta/k/obrazku.jpg') center/cover; */
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .card-content h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+
+        .card-content p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        footer {
+            margin-top: 3rem;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body>
-<h1>Vítej na mojí status page</h1>
-<p>Stránka funguje správně ✅</p>
+
+    <h1>Vyber kategorii (hru)</h1>
+
+    <div class="container">
+        
+        <a href="SR/" class="card">
+            <div class="card-image">🚂</div>
+            <div class="card-content">
+                <h2>SimRail</h2>
+                <p>Informace ke hře, návody a videa ke zhlédnutí.</p>
+            </div>
+        </a>
+
+        <a href="O2/" class="card">
+            <div class="card-image">🚌</div>
+            <div class="card-content">
+                <h2>OMSI 2</h2>
+                <p>Návody, modifikace ke stažení a videa ke zhlédnutí.</p>
+            </div>
+        </a>
+
+    </div>
+
+    <footer>&copy; 2026 TheFloxiCz</footer>
+
 </body>
 </html>

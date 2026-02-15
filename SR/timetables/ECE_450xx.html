@@ -31,9 +31,26 @@
             .legend-section { margin-top: 20px; font-size: 12px; line-height: 1.6; border-top: 1px solid #ccc; padding-top: 10px; }
             .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
             .legend-badge { min-width: 22px; text-align: center; display: inline-block; }
+            .back-link {
+                display: inline-block;
+                margin-bottom: 20px;
+                text-decoration: none;
+                color: #0056b3;
+                font-weight: 700;
+                font-size: 18px;
+            }
+            .back-link:hover {
+                text-decoration: underline;
+                color: #00356b;
+            }
+            /* Skryje odkaz při tisku do PDF nebo na papír */
+            @media print {
+                .back-link { display: none; }
+            }
         </style>
     </head>
     <body>
+        <a href="https://thefloxicz.github.io/SR/timetables/" class="back-link">← Zpět na seznam jízdních řádů</a>
         <div class="header-row">
             <div class="title-side">
                 <div class="train-category-box">ECE</div>

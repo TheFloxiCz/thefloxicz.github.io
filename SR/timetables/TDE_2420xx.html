@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Barlow Semi Condensed', sans-serif; margin: 25px; color: #222; background-color: #fcfcfc; }
+        
+        .back-link-container { margin-bottom: 30px; }
+        .back-link { 
+            display: inline-flex; align-items: center; text-decoration: none; color: #ffffff; 
+            background: #2c3e50; padding: 10px 22px; border-radius: 50px; font-weight: 600; 
+            font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: all 0.2s ease-in-out;
+        }
+        .back-link:hover { background: #34495e; transform: scale(1.03); box-shadow: 0 6px 14px rgba(0,0,0,0.2); color: #fff; }
+        .back-link svg { margin-right: 10px; width: 20px; height: 20px; fill: currentColor; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 3px solid #2c3e50; padding-bottom: 10px; }
+        .train-category-box { background: #FF23E9; color: #FFFFFF; padding: 5px 15px; font-weight: 700; border-radius: 4px; font-size: 18px; text-transform: uppercase; line-height: 1; }
+        h1 { margin: 0; font-size: 26px; color: #333; font-weight: 700; }
+        
+        /* STATUS BOXY (Poznámky) */
+        .status-box { margin: 20px 0; padding: 12px 18px; border-radius: 6px; font-size: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-left: 6px solid; }
+        .status-info { background-color: #eef7ff; border-color: #3498db; color: #2c3e50; }
+        .status-warning { background-color: #fffbef; border-color: #f1c40f; color: #856404; }
+        .status-danger { background-color: #ffe5e5; border-color: #c0392b; color: #8b0000; }
+        .status-success { background-color: #f6fff6; border-color: #27ae60; color: #1e5a34; }
+        .status-box strong { font-size: 16px; display: block; margin-bottom: 2px; }
+        .status-icon { font-size: 24px; }
+
+        .table-container { overflow-x: auto; border: 1px solid #444; border-radius: 4px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        table { border-collapse: separate; border-spacing: 0; font-size: 12px; width: auto; background: white; }
+        th, td { border-right: 1.2px solid #666; border-bottom: 1px dotted #888; padding: 3px 6px; text-align: center; line-height: 1.25; }
+        
+        .header-dark { background: #FF23E9 !important; color: #FFFFFF !important; border-bottom: 2.5px solid #000; font-size: 15px; padding: 6px; font-weight: 700; position: sticky; top: 0; z-index: 20; }
+        
+        th.sticky-col { position: sticky; left: 0; z-index: 40 !important; background: #FF23E9 !important; border-right: none !important; }
+        .station-name-cell { text-align: left !important; background: #e5e5e5 !important; position: sticky; left: 0; min-width: 185px; z-index: 30; font-size: 14px; border-right: none !important; }
+        .bold-row-text { font-weight: 700; }
+
+        .dir-col { background: #e5e5e5 !important; position: sticky; left: 198px; width: 32px !important; min-width: 32px !important; padding: 0 4px !important; font-size: 11px; font-weight: 700; z-index: 30; border-right: 2.5px solid #333 !important; }
+        .metadata-label { text-align: right !important; font-weight: 700; background: #e5e5e5 !important; position: sticky; left: 0; min-width: 231.5px; z-index: 30; font-size: 13px; border-right: 2.5px solid #333 !important; }
+        
+        .metadata-value { font-weight: 700; font-size: 12px; background: #e5e5e5 !important; }
+        .time-cell { font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 65px; }
+        .bold-time { font-weight: 700; }
+        .row-terminal td { border-top: 2.5px solid #000 !important; border-bottom: 2.5px solid #000 !important; background: #d0d0d0 !important; padding: 4px 6px; }
+        .row-arr td.time-cell, .row-arr td.dir-col { border-bottom: 1.8px solid #333 !important; }
+        
+        .badge-ph { background: #1e7e34; color: white; padding: 1px 3px; font-size: 10px; border-radius: 2px; margin-left: 5px; font-weight: 700; vertical-align: middle; }
+        .badge-pt { background: #ffc107; color: white; padding: 1px 4px; font-size: 10px; border-radius: 2px; margin-left: 5px; font-weight: 700; vertical-align: middle; }
+        .legend-section { margin-top: 20px; font-size: 13px; line-height: 1.6; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style></head><body>
+    
+    <div class="back-link-container">
+        <a href="https://thefloxicz.github.io/SR/timetables/" class="back-link">
+            <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path></svg>
+            Zpátky na hlavní stránku
+        </a>
+    </div>
+
+    <div class="header-row">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="train-category-box">TDE</div>
+            <h1>2420xx | Czarnca  - Katowice</h1>
+        </div>
+        <div style="font-size: 15px; color: #555; font-style: italic; font-weight: 600;">platí od 25. 02. 2026</div>
+    </div><div class="table-container"><table><thead><tr>
+        <th class="header-dark sticky-col" colspan="2" style="border-right: 2.5px solid #333 !important;">STANICE</th>
+        <th class='header-dark'>242049</th><th class='header-dark'>242025</th><th class='header-dark'>242027</th><th class='header-dark'>242029</th><th class='header-dark'>242033</th><th class='header-dark'>242035</th><th class='header-dark'>242039</th><th class='header-dark'>242041</th><th class='header-dark'>242045</th><th class='header-dark'>242047</th>
+        </tr></thead><tbody>
+        <tr><td class='metadata-label' colspan='2'>Řazení</td>
+        <td class='metadata-value'>E6ACTa-016</td><td class='metadata-value'>EU07-153+EU07-070</td><td class='metadata-value'>ET25-002</td><td class='metadata-value'>E186-134</td><td class='metadata-value'>ET22-256</td><td class='metadata-value'>EU07-193+EU07-096</td><td class='metadata-value'>E186-929</td><td class='metadata-value'>ET22-243</td><td class='metadata-value'>E6ACTa-014</td><td class='metadata-value'>ET22-911</td></tr>
+        <tr class='row-terminal'><td class='metadata-label' colspan='2'>Ze stanice</td>
+        <td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td><td class='metadata-value'>Puławy</td></tr><tr><td class='station-name-cell '>Czarnca</td><td class='dir-col'></td><td class='time-cell '>00:44</td><td class='time-cell '>02:44</td><td class='time-cell '>03:44</td><td class='time-cell '>05:44</td><td class='time-cell '>09:44</td><td class='time-cell '>11:44</td><td class='time-cell '>15:44</td><td class='time-cell '>17:44</td><td class='time-cell '>21:44</td><td class='time-cell '>23:44</td></tr><tr><td class='station-name-cell '>Czarnca</td><td class='dir-col'></td><td class='time-cell '>00:44</td><td class='time-cell '>02:44</td><td class='time-cell '>03:44</td><td class='time-cell '>05:44</td><td class='time-cell '>09:44</td><td class='time-cell '>11:44</td><td class='time-cell '>15:44</td><td class='time-cell '>17:44</td><td class='time-cell '>21:44</td><td class='time-cell '>23:44</td></tr><tr><td class='station-name-cell '>Czarnca </td><td class='dir-col'></td><td class='time-cell '>00:44</td><td class='time-cell '>02:44</td><td class='time-cell '>03:44</td><td class='time-cell '>05:44</td><td class='time-cell '>09:44</td><td class='time-cell '>11:44</td><td class='time-cell '>15:44</td><td class='time-cell '>17:44</td><td class='time-cell '>21:44</td><td class='time-cell '>23:44</td></tr><tr><td class='station-name-cell '>Knapówka</td><td class='dir-col'></td><td class='time-cell '>00:47</td><td class='time-cell '>02:47</td><td class='time-cell '>03:47</td><td class='time-cell '>05:47</td><td class='time-cell '>09:47</td><td class='time-cell '>11:47</td><td class='time-cell '>15:47</td><td class='time-cell '>17:47</td><td class='time-cell '>21:47</td><td class='time-cell '>23:47</td></tr><tr><td class='station-name-cell '>Psary</td><td class='dir-col'></td><td class='time-cell '>00:53</td><td class='time-cell '>02:53</td><td class='time-cell '>03:53</td><td class='time-cell '>05:53</td><td class='time-cell '>09:53</td><td class='time-cell '>11:53</td><td class='time-cell '>15:53</td><td class='time-cell '>17:53</td><td class='time-cell '>21:53</td><td class='time-cell '>23:53</td></tr><tr><td class='station-name-cell '>Góra Włodowska</td><td class='dir-col'></td><td class='time-cell '>01:12</td><td class='time-cell '>03:12</td><td class='time-cell '>04:12</td><td class='time-cell '>06:12</td><td class='time-cell '>10:12</td><td class='time-cell '>12:12</td><td class='time-cell '>16:12</td><td class='time-cell '>18:12</td><td class='time-cell '>22:12</td><td class='time-cell '>00:12</td></tr><tr><td class='station-name-cell '>Zawiercie</td><td class='dir-col'></td><td class='time-cell '>01:23</td><td class='time-cell '>03:23</td><td class='time-cell '>04:23</td><td class='time-cell '>06:23</td><td class='time-cell '>10:23</td><td class='time-cell '>12:23</td><td class='time-cell '>16:23</td><td class='time-cell '>18:23</td><td class='time-cell '>22:23</td><td class='time-cell '>00:23</td></tr><tr><td class='station-name-cell '>Łazy Ła</td><td class='dir-col'></td><td class='time-cell '>01:25</td><td class='time-cell '>03:25</td><td class='time-cell '>04:25</td><td class='time-cell '>06:25</td><td class='time-cell '>10:25</td><td class='time-cell '>12:25</td><td class='time-cell '>16:25</td><td class='time-cell '>18:25</td><td class='time-cell '>22:25</td><td class='time-cell '>00:25</td></tr><tr><td class='station-name-cell '>Łazy</td><td class='dir-col'></td><td class='time-cell '>01:27</td><td class='time-cell '>03:27</td><td class='time-cell '>04:27</td><td class='time-cell '>06:27</td><td class='time-cell '>10:27</td><td class='time-cell '>12:27</td><td class='time-cell '>16:27</td><td class='time-cell '>18:27</td><td class='time-cell '>22:27</td><td class='time-cell '>00:27</td></tr><tr><td class='station-name-cell '>Łazy Łc</td><td class='dir-col'></td><td class='time-cell '>01:29</td><td class='time-cell '>03:29</td><td class='time-cell '>04:29</td><td class='time-cell '>06:29</td><td class='time-cell '>10:29</td><td class='time-cell '>12:29</td><td class='time-cell '>16:29</td><td class='time-cell '>18:29</td><td class='time-cell '>22:29</td><td class='time-cell '>00:29</td></tr><tr><td class='station-name-cell '>Dąbrowa Górnicza Ząbkowice DZA</td><td class='dir-col'></td><td class='time-cell '>01:33</td><td class='time-cell '>03:33</td><td class='time-cell '>04:33</td><td class='time-cell '>06:33</td><td class='time-cell '>10:33</td><td class='time-cell '>12:33</td><td class='time-cell '>16:33</td><td class='time-cell '>18:33</td><td class='time-cell '>22:33</td><td class='time-cell '>00:33</td></tr><tr><td class='station-name-cell '>Dąbrowa Górnicza Ząbkowice</td><td class='dir-col'></td><td class='time-cell '>01:36</td><td class='time-cell '>03:36</td><td class='time-cell '>04:36</td><td class='time-cell '>06:36</td><td class='time-cell '>10:36</td><td class='time-cell '>12:36</td><td class='time-cell '>16:36</td><td class='time-cell '>18:36</td><td class='time-cell '>22:36</td><td class='time-cell '>00:36</td></tr><tr><td class='station-name-cell '>Dąbrowa Górnicza</td><td class='dir-col'></td><td class='time-cell '>01:43</td><td class='time-cell '>03:43</td><td class='time-cell '>04:43</td><td class='time-cell '>06:43</td><td class='time-cell '>10:43</td><td class='time-cell '>12:43</td><td class='time-cell '>16:43</td><td class='time-cell '>18:43</td><td class='time-cell '>22:43</td><td class='time-cell '>00:43</td></tr><tr><td class='station-name-cell '>Będzin</td><td class='dir-col'></td><td class='time-cell '>01:47</td><td class='time-cell '>03:47</td><td class='time-cell '>04:47</td><td class='time-cell '>06:47</td><td class='time-cell '>10:47</td><td class='time-cell '>12:47</td><td class='time-cell '>16:47</td><td class='time-cell '>18:47</td><td class='time-cell '>22:47</td><td class='time-cell '>00:47</td></tr><tr><td class='station-name-cell '>Sosnowiec Główny</td><td class='dir-col'></td><td class='time-cell '>01:51</td><td class='time-cell '>03:51</td><td class='time-cell '>04:51</td><td class='time-cell '>06:51</td><td class='time-cell '>10:51</td><td class='time-cell '>12:51</td><td class='time-cell '>16:51</td><td class='time-cell '>18:51</td><td class='time-cell '>22:51</td><td class='time-cell '>00:51</td></tr><tr><td class='station-name-cell '>Sosnowiec Gł. pzs R52</td><td class='dir-col'></td><td class='time-cell '>01:53</td><td class='time-cell '>03:53</td><td class='time-cell '>04:53</td><td class='time-cell '>06:53</td><td class='time-cell '>10:53</td><td class='time-cell '>12:53</td><td class='time-cell '>16:53</td><td class='time-cell '>18:53</td><td class='time-cell '>22:53</td><td class='time-cell '>00:53</td></tr><tr><td class='station-name-cell '>Katowice Zawodzie</td><td class='dir-col'></td><td class='time-cell '>01:57</td><td class='time-cell '>03:57</td><td class='time-cell '>04:57</td><td class='time-cell '>06:57</td><td class='time-cell '>10:57</td><td class='time-cell '>12:57</td><td class='time-cell '>16:57</td><td class='time-cell '>18:57</td><td class='time-cell '>22:57</td><td class='time-cell '>00:57</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Katowice<span class="badge-pt">PT</span></td><td class='dir-col'>př.</td><td class='time-cell bold-time'>02:02</td><td class='time-cell bold-time'>04:02</td><td class='time-cell bold-time'>05:02</td><td class='time-cell bold-time'>07:02</td><td class='time-cell bold-time'>11:02</td><td class='time-cell bold-time'>13:02</td><td class='time-cell bold-time'>17:02</td><td class='time-cell bold-time'>19:02</td><td class='time-cell bold-time'>23:02</td><td class='time-cell bold-time'>01:02</td></tr><tr class='row-dep'><td class='dir-col'>odj.</td><td class='time-cell bold-time'>02:07</td><td class='time-cell bold-time'>04:07</td><td class='time-cell bold-time'>05:07</td><td class='time-cell bold-time'>07:07</td><td class='time-cell bold-time'>11:07</td><td class='time-cell bold-time'>13:07</td><td class='time-cell bold-time'>17:07</td><td class='time-cell bold-time'>19:07</td><td class='time-cell bold-time'>23:07</td><td class='time-cell bold-time'>01:07</td></tr><tr class='row-terminal'><td class='metadata-label' colspan='2'>Do stanice</td>
+        <td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td><td class='metadata-value'>Gliwice</td>
+        </tr></tbody></table></div>
+        
+        <div style="margin: 15px 5px; padding: 12px 18px; background-color: #eef7ff; border-left: 5px solid #3498db; border-radius: 4px; font-size: 14px; color: #2c3e50; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">💡</span>
+            <div><strong>Tip:</strong> Pokud se vám tabulka nevejde na monitor, můžete ji posouvat do stran pomocí vodorovného posuvníku na spodní hraně tabulky.</div>
+        </div>
+        <div class="legend-section">
+        <div class="legend-item"><span>Poznámky</span></div>
+        <div class="legend-item"><span><span class="badge-ph">PH</span> Zastavení pro nástup</span></div>
+        <div class="legend-item"><span><span class="badge-pt">PT</span> Technické zastavení</span></div>
+    </div></body></html>

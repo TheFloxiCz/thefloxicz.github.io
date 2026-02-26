@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fcfcfc; --text-color: #222; --header-text: #333; --table-bg: #ffffff;
+            --station-bg: #e5e5e5; --border-color: #444; --metadata-label-bg: #e5e5e5;
+            --terminal-row-bg: #d0d0d0; --box-shadow: rgba(0,0,0,0.05);
+            --tip-bg: #eef7ff; --tip-text: #2c3e50;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --text-color: #e0e0e0; --header-text: #ffffff; --table-bg: #1e1e1e;
+            --station-bg: #2d2d2d; --border-color: #666; --metadata-label-bg: #2d2d2d;
+            --terminal-row-bg: #252525; --box-shadow: rgba(0,0,0,0.3);
+            --tip-bg: #1a2635; --tip-text: #d1d9e0;
+        }
+        body { font-family: 'Barlow Semi Condensed', sans-serif; margin: 25px; color: var(--text-color); background-color: var(--bg-color); transition: background 0.2s, color 0.1s; }
+        
+        .top-controls { position: absolute; top: 25px; right: 25px; display: flex; gap: 10px; }
+        #theme-toggle { cursor: pointer; padding: 10px 18px; border-radius: 20px; border: 1.5px solid var(--border-color); background: var(--table-bg); color: var(--text-color); font-weight: 700; font-family: inherit; }
+
+        .back-link-container { margin-bottom: 30px; }
+        .back-link { 
+            display: inline-flex; align-items: center; text-decoration: none; color: #ffffff; 
+            background: #2c3e50; padding: 10px 22px; border-radius: 50px; font-weight: 600; 
+            font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: all 0.2s ease;
+        }
+        .back-link:hover { background: #34495e; transform: scale(1.03); color: #fff; }
+        .back-link svg { margin-right: 10px; width: 20px; height: 20px; fill: currentColor; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 3px solid #2c3e50; padding-bottom: 10px; }
+        .train-category-box { background: #FFCB49; color: #000000; padding: 6px 18px; font-weight: 700; border-radius: 4px; font-size: 20px; text-transform: uppercase; line-height: 1; }
+        h1 { margin: 0; font-size: 28px; color: var(--header-text); font-weight: 700; }
+        
+        .status-box { margin: 20px 0; padding: 12px 18px; border-radius: 6px; font-size: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 6px var(--box-shadow); border-left: 6px solid; }
+        .status-info { background-color: var(--tip-bg); border-color: #3498db; color: var(--tip-text); }
+        .status-warning { background-color: #fffbef; border-color: #f1c40f; color: #856404; }
+        .status-danger { background-color: #ffe5e5; border-color: #c0392b; color: #8b0000; }
+        .status-success { background-color: #f6fff6; border-color: #27ae60; color: #1e5a34; }
+        .status-icon { font-size: 24px; }
+
+        .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 30px; box-shadow: 0 2px 8px var(--box-shadow); }
+        table { border-collapse: separate; border-spacing: 0; font-size: 12px; width: auto; background: var(--table-bg); }
+        th, td { border-right: 1.2px solid var(--border-color); border-bottom: 1px dotted var(--border-color); padding: 3px 6px; text-align: center; }
+        
+        .header-dark { background: #FFCB49 !important; color: #000000 !important; border-bottom: 2.5px solid #000; font-size: 16px; padding: 8px; font-weight: 700; position: sticky; top: 0; z-index: 20; }
+        th.sticky-col { position: sticky; left: 0; z-index: 40 !important; background: #FFCB49 !important; }
+        .station-name-cell { text-align: left !important; background: var(--station-bg) !important; position: sticky; left: 0; min-width: 190px; z-index: 30; font-size: 15px; border-right: none !important; }
+        .bold-row-text { font-weight: 700; }
+
+        .dir-col { background: var(--station-bg) !important; position: sticky; left: 190px; width: 35px !important; min-width: 35px !important; font-size: 11px; font-weight: 700; z-index: 30; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-label { text-align: right !important; font-weight: 700; background: var(--metadata-label-bg) !important; position: sticky; left: 0; min-width: 225px; z-index: 30; font-size: 14px; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-value { font-weight: 700; font-size: 12px; background: var(--station-bg) !important; }
+        .time-cell { font-size: 14px; font-variant-numeric: tabular-nums; min-width: 65px; }
+        .bold-time { font-weight: 700; }
+        .row-terminal td { border-top: 2.5px solid var(--text-color) !important; border-bottom: 2.5px solid var(--text-color) !important; background: var(--terminal-row-bg) !important; }
+        .row-arr td.time-cell, .row-arr td.dir-col { border-bottom: 1.8px solid var(--border-color) !important; }
+        
+        .badge-ph { background: #1e7e34; color: white; padding: 1px 3px; font-size: 10px; border-radius: 2px; margin-left: 5px; font-weight: 700; }
+        .badge-pt { background: #ffc107; color: black; padding: 1px 4px; font-size: 10px; border-radius: 2px; margin-left: 5px; font-weight: 700; }
+        .legend-section { margin-top: 20px; font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        .tip-box { margin: 15px 5px; padding: 12px 18px; background-color: var(--tip-bg); border-left: 6px solid #3498db; border-radius: 4px; font-size: 14px; color: var(--tip-text); display: flex; align-items: center; gap: 12px; }
+    </style></head><body>
+    
+    <div class="top-controls">
+        <button id="theme-toggle">🌙 Dark Mode</button>
+    </div>
+
+    <div class="back-link-container">
+        <a href="https://thefloxicz.github.io/SR/timetables/" class="back-link">
+            <svg viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path></svg>
+            Back to Timetables
+        </a>
+    </div>
+
+    <div class="header-row">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="train-category-box">TME</div>
+            <h1>4444xx | Koniecpol - Jaworzno Szczakowa</h1>
+        </div>
+        <div style="font-size: 15px; font-style: italic; font-weight: 600;">Valid from 26. 02. 2026</div>
+    </div><div class="table-container"><table><thead><tr>
+        <th class="header-dark sticky-col" colspan="2" style="border-right: 2.5px solid #333 !important;">STATION</th>
+        <th class='header-dark'>444401</th><th class='header-dark'>444403</th><th class='header-dark'>444405</th><th class='header-dark'>444407</th><th class='header-dark'>444409</th><th class='header-dark'>444411</th><th class='header-dark'>444415</th><th class='header-dark'>444419</th><th class='header-dark'>444423</th><th class='header-dark'>444427</th><th class='header-dark'>444431</th><th class='header-dark'>444435</th><th class='header-dark'>444439</th><th class='header-dark'>444443</th><th class='header-dark'>444447</th>
+        </tr></thead><tbody>
+        <tr><td class='metadata-label' colspan='2'>Consist</td>
+        <td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td><td class='metadata-value'>-</td></tr>
+        <tr class='row-terminal'><td class='metadata-label' colspan='2'>From station</td>
+        <td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td><td class='metadata-value'>Chorzew Siemkowice</td></tr><tr><td class='station-name-cell '>Koniecpol</td><td class='dir-col'></td><td class='time-cell '>00:47</td><td class='time-cell '>01:47</td><td class='time-cell '>02:47</td><td class='time-cell '>03:47</td><td class='time-cell '>04:47</td><td class='time-cell '>05:47</td><td class='time-cell '>07:47</td><td class='time-cell '>09:47</td><td class='time-cell '>11:47</td><td class='time-cell '>13:47</td><td class='time-cell '>15:47</td><td class='time-cell '>17:47</td><td class='time-cell '>19:47</td><td class='time-cell '>21:47</td><td class='time-cell '>23:47</td></tr><tr><td class='station-name-cell '>Starzyny</td><td class='dir-col'></td><td class='time-cell '>01:00</td><td class='time-cell '>02:00</td><td class='time-cell '>03:00</td><td class='time-cell '>04:00</td><td class='time-cell '>05:00</td><td class='time-cell '>06:00</td><td class='time-cell '>08:00</td><td class='time-cell '>10:00</td><td class='time-cell '>12:00</td><td class='time-cell '>14:00</td><td class='time-cell '>16:00</td><td class='time-cell '>18:00</td><td class='time-cell '>20:00</td><td class='time-cell '>22:00</td><td class='time-cell '>00:00</td></tr><tr><td class='station-name-cell '>Sprowa</td><td class='dir-col'></td><td class='time-cell '>01:11</td><td class='time-cell '>02:11</td><td class='time-cell '>03:11</td><td class='time-cell '>04:11</td><td class='time-cell '>05:11</td><td class='time-cell '>06:11</td><td class='time-cell '>08:11</td><td class='time-cell '>10:11</td><td class='time-cell '>12:11</td><td class='time-cell '>14:11</td><td class='time-cell '>16:11</td><td class='time-cell '>18:11</td><td class='time-cell '>20:11</td><td class='time-cell '>22:11</td><td class='time-cell '>00:11</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Kozłów<span class="badge-pt">PT</span></td><td class='dir-col'>arr.</td><td class='time-cell bold-time'>01:26</td><td class='time-cell bold-time'>02:26</td><td class='time-cell bold-time'>03:26</td><td class='time-cell bold-time'>04:26</td><td class='time-cell bold-time'>05:26</td><td class='time-cell bold-time'>06:26</td><td class='time-cell bold-time'>08:26</td><td class='time-cell bold-time'>10:26</td><td class='time-cell bold-time'>12:26</td><td class='time-cell bold-time'>14:26</td><td class='time-cell bold-time'>16:26</td><td class='time-cell bold-time'>18:26</td><td class='time-cell bold-time'>20:26</td><td class='time-cell bold-time'>22:26</td><td class='time-cell bold-time'>00:26</td></tr><tr class='row-dep'><td class='dir-col'>dep.</td><td class='time-cell bold-time'>02:01</td><td class='time-cell bold-time'>03:01</td><td class='time-cell bold-time'>04:01</td><td class='time-cell bold-time'>05:01</td><td class='time-cell bold-time'>06:01</td><td class='time-cell bold-time'>07:01</td><td class='time-cell bold-time'>09:01</td><td class='time-cell bold-time'>11:01</td><td class='time-cell bold-time'>13:01</td><td class='time-cell bold-time'>15:01</td><td class='time-cell bold-time'>17:01</td><td class='time-cell bold-time'>19:01</td><td class='time-cell bold-time'>21:01</td><td class='time-cell bold-time'>23:01</td><td class='time-cell bold-time'>01:01</td></tr><tr><td class='station-name-cell '>Tunel</td><td class='dir-col'></td><td class='time-cell '>02:06</td><td class='time-cell '>03:06</td><td class='time-cell '>04:06</td><td class='time-cell '>05:06</td><td class='time-cell '>06:06</td><td class='time-cell '>07:06</td><td class='time-cell '>09:06</td><td class='time-cell '>11:06</td><td class='time-cell '>13:06</td><td class='time-cell '>15:06</td><td class='time-cell '>17:06</td><td class='time-cell '>19:06</td><td class='time-cell '>21:06</td><td class='time-cell '>23:06</td><td class='time-cell '>01:06</td></tr><tr><td class='station-name-cell '>Charsznica</td><td class='dir-col'></td><td class='time-cell '>02:16</td><td class='time-cell '>03:16</td><td class='time-cell '>04:16</td><td class='time-cell '>05:16</td><td class='time-cell '>06:16</td><td class='time-cell '>07:16</td><td class='time-cell '>09:16</td><td class='time-cell '>11:16</td><td class='time-cell '>13:16</td><td class='time-cell '>15:16</td><td class='time-cell '>17:16</td><td class='time-cell '>19:16</td><td class='time-cell '>21:16</td><td class='time-cell '>23:16</td><td class='time-cell '>01:16</td></tr><tr><td class='station-name-cell '>Gajówka APO</td><td class='dir-col'></td><td class='time-cell '>02:26</td><td class='time-cell '>03:26</td><td class='time-cell '>04:26</td><td class='time-cell '>05:26</td><td class='time-cell '>06:26</td><td class='time-cell '>07:26</td><td class='time-cell '>09:26</td><td class='time-cell '>11:26</td><td class='time-cell '>13:26</td><td class='time-cell '>15:26</td><td class='time-cell '>17:26</td><td class='time-cell '>19:26</td><td class='time-cell '>21:26</td><td class='time-cell '>23:26</td><td class='time-cell '>01:26</td></tr><tr><td class='station-name-cell '>Wolbrom</td><td class='dir-col'></td><td class='time-cell '>02:35</td><td class='time-cell '>03:35</td><td class='time-cell '>04:35</td><td class='time-cell '>05:35</td><td class='time-cell '>06:35</td><td class='time-cell '>07:35</td><td class='time-cell '>09:35</td><td class='time-cell '>11:35</td><td class='time-cell '>13:35</td><td class='time-cell '>15:35</td><td class='time-cell '>17:35</td><td class='time-cell '>19:35</td><td class='time-cell '>21:35</td><td class='time-cell '>23:35</td><td class='time-cell '>01:35</td></tr><tr><td class='station-name-cell '>Zarzecze APO</td><td class='dir-col'></td><td class='time-cell '>02:43</td><td class='time-cell '>03:43</td><td class='time-cell '>04:43</td><td class='time-cell '>05:43</td><td class='time-cell '>06:43</td><td class='time-cell '>07:43</td><td class='time-cell '>09:43</td><td class='time-cell '>11:43</td><td class='time-cell '>13:43</td><td class='time-cell '>15:43</td><td class='time-cell '>17:43</td><td class='time-cell '>19:43</td><td class='time-cell '>21:43</td><td class='time-cell '>23:43</td><td class='time-cell '>01:43</td></tr><tr><td class='station-name-cell '>Jaroszowiec Olkuski</td><td class='dir-col'></td><td class='time-cell '>02:49</td><td class='time-cell '>03:49</td><td class='time-cell '>04:49</td><td class='time-cell '>05:49</td><td class='time-cell '>06:49</td><td class='time-cell '>07:49</td><td class='time-cell '>09:49</td><td class='time-cell '>11:49</td><td class='time-cell '>13:49</td><td class='time-cell '>15:49</td><td class='time-cell '>17:49</td><td class='time-cell '>19:49</td><td class='time-cell '>21:49</td><td class='time-cell '>23:49</td><td class='time-cell '>01:49</td></tr><tr><td class='station-name-cell '>Olkusz</td><td class='dir-col'></td><td class='time-cell '>02:59</td><td class='time-cell '>03:59</td><td class='time-cell '>04:59</td><td class='time-cell '>05:59</td><td class='time-cell '>06:59</td><td class='time-cell '>07:59</td><td class='time-cell '>09:59</td><td class='time-cell '>11:59</td><td class='time-cell '>13:59</td><td class='time-cell '>15:59</td><td class='time-cell '>17:59</td><td class='time-cell '>19:59</td><td class='time-cell '>21:59</td><td class='time-cell '>23:59</td><td class='time-cell '>01:59</td></tr><tr><td class='station-name-cell '>Bukowno</td><td class='dir-col'></td><td class='time-cell '>03:07</td><td class='time-cell '>04:07</td><td class='time-cell '>05:07</td><td class='time-cell '>06:07</td><td class='time-cell '>07:07</td><td class='time-cell '>08:07</td><td class='time-cell '>10:07</td><td class='time-cell '>12:07</td><td class='time-cell '>14:07</td><td class='time-cell '>16:07</td><td class='time-cell '>18:07</td><td class='time-cell '>20:07</td><td class='time-cell '>22:07</td><td class='time-cell '>00:07</td><td class='time-cell '>02:07</td></tr><tr><td class='station-name-cell '>Sławków</td><td class='dir-col'></td><td class='time-cell '>03:15</td><td class='time-cell '>04:15</td><td class='time-cell '>05:15</td><td class='time-cell '>06:15</td><td class='time-cell '>07:15</td><td class='time-cell '>08:15</td><td class='time-cell '>10:15</td><td class='time-cell '>12:15</td><td class='time-cell '>14:15</td><td class='time-cell '>16:15</td><td class='time-cell '>18:15</td><td class='time-cell '>20:15</td><td class='time-cell '>22:15</td><td class='time-cell '>00:15</td><td class='time-cell '>02:15</td></tr><tr><td class='station-name-cell '>Dąbrowa Górnicza Wschodnia</td><td class='dir-col'></td><td class='time-cell '>03:20</td><td class='time-cell '>04:20</td><td class='time-cell '>05:20</td><td class='time-cell '>06:20</td><td class='time-cell '>07:20</td><td class='time-cell '>08:20</td><td class='time-cell '>10:20</td><td class='time-cell '>12:20</td><td class='time-cell '>14:20</td><td class='time-cell '>16:20</td><td class='time-cell '>18:20</td><td class='time-cell '>20:20</td><td class='time-cell '>22:20</td><td class='time-cell '>00:20</td><td class='time-cell '>02:20</td></tr><tr><td class='station-name-cell '>Dorota</td><td class='dir-col'></td><td class='time-cell '>03:26</td><td class='time-cell '>04:26</td><td class='time-cell '>05:26</td><td class='time-cell '>06:26</td><td class='time-cell '>07:26</td><td class='time-cell '>08:26</td><td class='time-cell '>10:26</td><td class='time-cell '>12:26</td><td class='time-cell '>14:26</td><td class='time-cell '>16:26</td><td class='time-cell '>18:26</td><td class='time-cell '>20:26</td><td class='time-cell '>22:26</td><td class='time-cell '>00:26</td><td class='time-cell '>02:26</td></tr><tr><td class='station-name-cell '>Sosnowiec Maczki</td><td class='dir-col'></td><td class='time-cell '>03:31</td><td class='time-cell '>04:31</td><td class='time-cell '>05:31</td><td class='time-cell '>06:31</td><td class='time-cell '>07:31</td><td class='time-cell '>08:31</td><td class='time-cell '>10:31</td><td class='time-cell '>12:31</td><td class='time-cell '>14:31</td><td class='time-cell '>16:31</td><td class='time-cell '>18:31</td><td class='time-cell '>20:31</td><td class='time-cell '>22:31</td><td class='time-cell '>00:31</td><td class='time-cell '>02:31</td></tr><tr><td class='station-name-cell '>Jaworzno Szczakowa</td><td class='dir-col'></td><td class='time-cell '>03:37</td><td class='time-cell '>04:37</td><td class='time-cell '>05:37</td><td class='time-cell '>06:37</td><td class='time-cell '>07:37</td><td class='time-cell '>08:37</td><td class='time-cell '>10:37</td><td class='time-cell '>12:37</td><td class='time-cell '>14:37</td><td class='time-cell '>16:37</td><td class='time-cell '>18:37</td><td class='time-cell '>20:37</td><td class='time-cell '>22:37</td><td class='time-cell '>00:37</td><td class='time-cell '>02:37</td></tr><tr class='row-terminal'><td class='metadata-label' colspan='2'>To station</td>
+        <td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td><td class='metadata-value'>Sosnowiec Jęzor</td>
+        </tr></tbody></table></div>
+        <div class="tip-box"><span style="font-size: 20px;">💡</span><div><strong>Tip:</strong> If the table does not fit on your monitor, you can scroll sideways using the horizontal scroll bar.</div></div><div class="legend-section">
+        <div><strong>NOTES:</strong></div>
+        <div><span class="badge-ph">PH</span> Stop for boarding/unboarding passengers</div>
+        <div><span class="badge-pt">PT</span> Technical stop due to traffic reasons</div>
+    </div>
+    <script>
+        const btn = document.getElementById('theme-toggle');
+        const setBtnText = (isDark) => { btn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode"; };
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            setBtnText(true);
+        }
+        btn.onclick = () => {
+            let isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            let newTheme = isDark ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            setBtnText(!isDark);
+        };
+    </script></body></html>

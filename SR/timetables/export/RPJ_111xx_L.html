@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fcfcfc; --text-color: #222; --header-text: #333; --table-bg: #ffffff;
+            --station-bg: #e5e5e5; --border-color: #666; --metadata-label-bg: #e5e5e5;
+            --terminal-row-bg: #d0d0d0; --box-shadow: rgba(0,0,0,0.05);
+            --tip-bg: #eef7ff; --tip-text: #2c3e50;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --text-color: #e0e0e0; --header-text: #ffffff; --table-bg: #1e1e1e;
+            --station-bg: #2d2d2d; --border-color: #444; --metadata-label-bg: #2d2d2d;
+            --terminal-row-bg: #252525; --box-shadow: rgba(0,0,0,0.3);
+            --tip-bg: #1a2635; --tip-text: #d1d9e0;
+        }
+        body { font-family: 'Barlow Semi Condensed', sans-serif; margin: 25px; color: var(--text-color); background-color: var(--bg-color); transition: all 0.2s ease; }
+        .back-link-container { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .back-link { 
+            display: inline-flex; align-items: center; text-decoration: none; color: #ffffff; 
+            background: #2c3e50; padding: 10px 22px; border-radius: 50px; font-weight: 600; 
+            font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: all 0.2s ease;
+        }
+        .back-link:hover { background: #34495e; transform: scale(1.03); color: #fff; }
+        .controls { display: flex; gap: 10px; }
+        select, #theme-toggle { cursor: pointer; padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border-color); background: var(--table-bg); color: var(--text-color); font-weight: 600; font-family: inherit; transition: all 0.2s; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 3px solid #2c3e50; padding-bottom: 10px; }
+        .train-category-box { background: #D9FF99; color: #000000; padding: 5px 15px; font-weight: 700; border-radius: 4px; font-size: 18px; text-transform: uppercase; line-height: 1; }
+        h1 { margin: 0; font-size: 26px; color: var(--header-text); font-weight: 700; }
+        
+        .status-box { margin: 20px 0; padding: 12px 18px; border-radius: 6px; font-size: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 6px var(--box-shadow); border-left: 6px solid; }
+        .status-info { background-color: var(--tip-bg); border-color: #3498db; color: var(--tip-text); }
+
+        .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 10px; box-shadow: 0 2px 8px var(--box-shadow); }
+        table { border-collapse: separate; border-spacing: 0; font-size: 12px; width: auto; background: var(--table-bg); }
+        th, td { border-right: 1.2px solid var(--border-color); border-bottom: 1px dotted var(--border-color); padding: 3px 6px; text-align: center; }
+        
+        .time-cell-arr { border-bottom: 1.5px solid var(--border-color) !important; }
+
+        .header-dark { background: #D9FF99 !important; color: #000000 !important; border-bottom: 2.5px solid #000; font-size: 15px; padding: 6px; font-weight: 700; position: sticky; top: 0; z-index: 20; }
+        th.sticky-col { position: sticky; left: 0; z-index: 40 !important; background: #D9FF99 !important; }
+        .station-name-cell { text-align: left !important; background: var(--station-bg) !important; position: sticky; left: 0; min-width: 185px; z-index: 30; font-size: 14px; border-right: none !important; }
+        .bold-row-text { font-weight: 700; }
+        .dir-col { background: var(--station-bg) !important; position: sticky; left: 198px; width: 32px !important; min-width: 32px !important; font-size: 11px; font-weight: 700; z-index: 30; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-label { text-align: right !important; font-weight: 700; background: var(--metadata-label-bg) !important; position: sticky; left: 0; min-width: 231.5px; z-index: 30; font-size: 13px; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-value { font-weight: 700; font-size: 12px; background: var(--station-bg) !important; }
+        .time-cell { font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 65px; }
+        .bold-time { font-weight: 700; }
+        .row-terminal td { border-top: 2.5px solid var(--text-color) !important; border-bottom: 2.5px solid var(--text-color) !important; background: var(--terminal-row-bg) !important; }
+        .badge-ph { background: #1e7e34; color: white; padding: 1px 3px; font-size: 10px; border-radius: 2px; margin-left: 5px; }
+        .badge-pt { background: #ffc107; color: black; padding: 1px 4px; font-size: 10px; border-radius: 2px; margin-left: 5px; }
+        
+        .notes-section { margin-top: 20px; font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        .notes-section h3 { margin-top: 0; margin-bottom: 10px; color: var(--header-text); }
+        .legend-item { margin-bottom: 5px; }
+        .tip-box { margin: 15px 5px; padding: 12px 18px; background-color: var(--tip-bg); border-left: 5px solid #3498db; border-radius: 4px; font-size: 14px; color: var(--tip-text); display: flex; align-items: center; gap: 12px; }
+    </style></head><body>
+    
+    <div class="back-link-container">
+        <a href="../" class="back-link" id="txt-back_link">...</a>
+        <div class="controls">
+            <select id="lang-select" onchange="applyLang()">
+                <option value="cs">© CZ</option>
+                <option value="en">GB EN</option>
+            </select>
+            <button id="theme-toggle">🌙</button>
+        </div>
+    </div>
+
+    <div class="header-row">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="train-category-box">RPJ</div>
+            <h1>111xx | Warszawa Wschodnia - Łódź Widzew</h1>
+        </div>
+        <div style="font-size: 15px; font-style: italic; font-weight: 600;"><span id="txt-valid_from_prefix">...</span> 25. 02. 2026</div>
+    </div><div class="table-container"><table><thead><tr><th class="header-dark sticky-col" colspan="2" style="border-right: 2.5px solid #333 !important;" id="txt-station_header">STANICE</th>
+        <th class='header-dark'>11101</th><th class='header-dark'>11103</th><th class='header-dark'>11105</th><th class='header-dark'>11107</th><th class='header-dark'>11109</th><th class='header-dark'>11111</th></tr></thead><tbody>
+        <tr><td class='metadata-label' colspan='2' id="txt-consist_label">Řazení</td><td class='metadata-value'>EN57-919</td><td class='metadata-value'>EN57-1331+EN57-206</td><td class='metadata-value'>EN71-004</td><td class='metadata-value'>EN57-919</td><td class='metadata-value'>EN57-650+EN71-015</td><td class='metadata-value'>EN57-612+EN57-1181</td></tr>
+        <tr class='row-terminal'><td class='metadata-label' colspan='2' id="txt-from_label">Ze stanice</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td><td class='metadata-value'>Warszawa Rembertów GT 8-12</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Warszawa Wschodnia<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>06:00</td><td class='time-cell bold-time time-cell-arr'>10:00</td><td class='time-cell bold-time time-cell-arr'>14:00</td><td class='time-cell bold-time time-cell-arr'>18:00</td><td class='time-cell bold-time time-cell-arr'>20:00</td><td class='time-cell bold-time time-cell-arr'>22:00</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>06:05</td><td class='time-cell bold-time'>10:05</td><td class='time-cell bold-time'>14:05</td><td class='time-cell bold-time'>18:05</td><td class='time-cell bold-time'>20:05</td><td class='time-cell bold-time'>22:05</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Warszawa Centralna<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>06:09</td><td class='time-cell bold-time time-cell-arr'>10:09</td><td class='time-cell bold-time time-cell-arr'>14:09</td><td class='time-cell bold-time time-cell-arr'>18:09</td><td class='time-cell bold-time time-cell-arr'>20:09</td><td class='time-cell bold-time time-cell-arr'>22:09</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>06:13</td><td class='time-cell bold-time'>10:13</td><td class='time-cell bold-time'>14:13</td><td class='time-cell bold-time'>18:13</td><td class='time-cell bold-time'>20:13</td><td class='time-cell bold-time'>22:13</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Warszawa Zachodnia<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>06:16</td><td class='time-cell bold-time time-cell-arr'>10:16</td><td class='time-cell bold-time time-cell-arr'>14:16</td><td class='time-cell bold-time time-cell-arr'>18:16</td><td class='time-cell bold-time time-cell-arr'>20:16</td><td class='time-cell bold-time time-cell-arr'>22:16</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>06:17</td><td class='time-cell bold-time'>10:17</td><td class='time-cell bold-time'>14:17</td><td class='time-cell bold-time'>18:17</td><td class='time-cell bold-time'>20:17</td><td class='time-cell bold-time'>22:17</td></tr><tr><td class='station-name-cell '>Warszawa Włochy</td><td class='dir-col'></td><td class='time-cell '>06:20</td><td class='time-cell '>10:20</td><td class='time-cell '>14:20</td><td class='time-cell '>18:20</td><td class='time-cell '>20:20</td><td class='time-cell '>22:20</td></tr><tr><td class='station-name-cell '>Józefinów</td><td class='dir-col'></td><td class='time-cell '>06:23</td><td class='time-cell '>10:23</td><td class='time-cell '>14:23</td><td class='time-cell '>18:23</td><td class='time-cell '>20:23</td><td class='time-cell '>22:23</td></tr><tr><td class='station-name-cell '>Pruszków</td><td class='dir-col'></td><td class='time-cell '>06:25</td><td class='time-cell '>10:25</td><td class='time-cell '>14:25</td><td class='time-cell '>18:25</td><td class='time-cell '>20:25</td><td class='time-cell '>22:25</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Grodzisk Mazowiecki<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>06:34</td><td class='time-cell bold-time time-cell-arr'>10:34</td><td class='time-cell bold-time time-cell-arr'>14:34</td><td class='time-cell bold-time time-cell-arr'>18:34</td><td class='time-cell bold-time time-cell-arr'>20:34</td><td class='time-cell bold-time time-cell-arr'>22:34</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>06:35</td><td class='time-cell bold-time'>10:35</td><td class='time-cell bold-time'>14:35</td><td class='time-cell bold-time'>18:35</td><td class='time-cell bold-time'>20:35</td><td class='time-cell bold-time'>22:35</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Żyrardów<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>06:45</td><td class='time-cell bold-time time-cell-arr'>10:45</td><td class='time-cell bold-time time-cell-arr'>14:45</td><td class='time-cell bold-time time-cell-arr'>18:45</td><td class='time-cell bold-time time-cell-arr'>20:45</td><td class='time-cell bold-time time-cell-arr'>22:45</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>06:46</td><td class='time-cell bold-time'>10:46</td><td class='time-cell bold-time'>14:46</td><td class='time-cell bold-time'>18:46</td><td class='time-cell bold-time'>20:46</td><td class='time-cell bold-time'>22:46</td></tr><tr><td class='station-name-cell '>Radziwiłłów Mazowiecki</td><td class='dir-col'></td><td class='time-cell '>06:53</td><td class='time-cell '>10:53</td><td class='time-cell '>14:53</td><td class='time-cell '>18:53</td><td class='time-cell '>20:53</td><td class='time-cell '>22:53</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Skierniewice<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:01</td><td class='time-cell bold-time time-cell-arr'>11:01</td><td class='time-cell bold-time time-cell-arr'>15:01</td><td class='time-cell bold-time time-cell-arr'>19:01</td><td class='time-cell bold-time time-cell-arr'>21:01</td><td class='time-cell bold-time time-cell-arr'>23:01</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:02</td><td class='time-cell bold-time'>11:02</td><td class='time-cell bold-time'>15:02</td><td class='time-cell bold-time'>19:02</td><td class='time-cell bold-time'>21:02</td><td class='time-cell bold-time'>23:02</td></tr><tr><td class='station-name-cell '>Skierniewice P PZS</td><td class='dir-col'></td><td class='time-cell '>07:04</td><td class='time-cell '>11:04</td><td class='time-cell '>15:04</td><td class='time-cell '>19:04</td><td class='time-cell '>21:04</td><td class='time-cell '>23:04</td></tr><tr><td class='station-name-cell '>Płyćwia</td><td class='dir-col'></td><td class='time-cell '>07:12</td><td class='time-cell '>11:12</td><td class='time-cell '>15:12</td><td class='time-cell '>19:12</td><td class='time-cell '>21:12</td><td class='time-cell '>23:12</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Lipce Reymontowskie<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:15</td><td class='time-cell bold-time time-cell-arr'>11:15</td><td class='time-cell bold-time time-cell-arr'>15:15</td><td class='time-cell bold-time time-cell-arr'>19:15</td><td class='time-cell bold-time time-cell-arr'>21:15</td><td class='time-cell bold-time time-cell-arr'>23:15</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:16</td><td class='time-cell bold-time'>11:16</td><td class='time-cell bold-time'>15:16</td><td class='time-cell bold-time'>19:16</td><td class='time-cell bold-time'>21:16</td><td class='time-cell bold-time'>23:16</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Rogów<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:24</td><td class='time-cell bold-time time-cell-arr'>11:24</td><td class='time-cell bold-time time-cell-arr'>15:24</td><td class='time-cell bold-time time-cell-arr'>19:24</td><td class='time-cell bold-time time-cell-arr'>21:24</td><td class='time-cell bold-time time-cell-arr'>23:24</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:24</td><td class='time-cell bold-time'>11:24</td><td class='time-cell bold-time'>15:24</td><td class='time-cell bold-time'>19:24</td><td class='time-cell bold-time'>21:24</td><td class='time-cell bold-time'>23:24</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Koluszki<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:32</td><td class='time-cell bold-time time-cell-arr'>11:32</td><td class='time-cell bold-time time-cell-arr'>15:32</td><td class='time-cell bold-time time-cell-arr'>19:32</td><td class='time-cell bold-time time-cell-arr'>21:32</td><td class='time-cell bold-time time-cell-arr'>23:32</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:33</td><td class='time-cell bold-time'>11:33</td><td class='time-cell bold-time'>15:33</td><td class='time-cell bold-time'>19:33</td><td class='time-cell bold-time'>21:33</td><td class='time-cell bold-time'>23:33</td></tr><tr><td class='station-name-cell '>Koluszki PZS R145</td><td class='dir-col'></td><td class='time-cell '>07:34</td><td class='time-cell '>11:34</td><td class='time-cell '>15:34</td><td class='time-cell '>19:34</td><td class='time-cell '>21:34</td><td class='time-cell '>23:34</td></tr><tr><td class='station-name-cell '>Gałkówek</td><td class='dir-col'></td><td class='time-cell '>07:37</td><td class='time-cell '>11:37</td><td class='time-cell '>15:37</td><td class='time-cell '>19:37</td><td class='time-cell '>21:37</td><td class='time-cell '>23:37</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Łódź Andrzejów<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:44</td><td class='time-cell bold-time time-cell-arr'>11:44</td><td class='time-cell bold-time time-cell-arr'>15:44</td><td class='time-cell bold-time time-cell-arr'>19:44</td><td class='time-cell bold-time time-cell-arr'>21:44</td><td class='time-cell bold-time time-cell-arr'>23:44</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:44</td><td class='time-cell bold-time'>11:44</td><td class='time-cell bold-time'>15:44</td><td class='time-cell bold-time'>19:44</td><td class='time-cell bold-time'>21:44</td><td class='time-cell bold-time'>23:44</td></tr><tr class='row-arr'><td class='station-name-cell bold-row-text' rowspan='2'>Łódź Widzew<span class="badge-ph">PH</span></td><td class='dir-col time-cell-arr' id='txt-arr_short'>př.</td><td class='time-cell bold-time time-cell-arr'>07:49</td><td class='time-cell bold-time time-cell-arr'>11:49</td><td class='time-cell bold-time time-cell-arr'>15:49</td><td class='time-cell bold-time time-cell-arr'>19:49</td><td class='time-cell bold-time time-cell-arr'>21:49</td><td class='time-cell bold-time time-cell-arr'>23:49</td></tr><tr class='row-dep'><td class='dir-col' id='txt-dep_short'>odj.</td><td class='time-cell bold-time'>07:51</td><td class='time-cell bold-time'>11:51</td><td class='time-cell bold-time'>15:51</td><td class='time-cell bold-time'>19:51</td><td class='time-cell bold-time'>21:51</td><td class='time-cell bold-time'>23:51</td></tr><tr class='row-terminal'><td class='metadata-label' colspan='2' id="txt-to_label">Do stanice</td><td class='metadata-value'>Łódź Fabryczna</td><td class='metadata-value'>Łódź Fabryczna</td><td class='metadata-value'>Łódź Fabryczna</td><td class='metadata-value'>Łódź Fabryczna</td><td class='metadata-value'>Łódź Fabryczna</td><td class='metadata-value'>Łódź Fabryczna</td></tr></tbody></table></div><div class="tip-box"><span style="font-size: 20px;">💡</span><div id="txt-table_tip">...</div></div>
+    <div class="notes-section">
+        <h3 id="txt-notes_title">Poznámky</h3>
+        <div class="legend-item"><span class="badge-ph">PH</span> <span id="txt-ph_desc">Zastavení pro nástup</span></div>
+        <div class="legend-item"><span class="badge-pt">PT</span> <span id="txt-pt_desc">Technické zastavení</span></div>
+    </div><script>
+        let translations = {};
+        async function init() {
+            try {
+                const resp = await fetch('../translations.json');
+                translations = await resp.json();
+                const savedLang = localStorage.getItem('lang') || 'cs';
+                document.getElementById('lang-select').value = savedLang;
+                applyLang();
+            } catch(e) { console.error("Chyba načítání translations.json", e); }
+        }
+
+        function applyLang() {
+            const lang = document.getElementById('lang-select').value;
+            localStorage.setItem('lang', lang);
+            const t = translations[lang];
+            if (!t) return;
+            
+            // Projde všechny klíče v překladu a najde VŠECHNY elementy s daným ID
+            Object.keys(t).forEach(key => {
+                const elements = document.querySelectorAll('[id="txt-' + key + '"]');
+                elements.forEach(el => { el.innerHTML = t[key]; });
+            });
+            updateThemeButton();
+        }
+
+        const btn = document.getElementById('theme-toggle');
+        function updateThemeButton() {
+            const theme = document.documentElement.getAttribute('data-theme');
+            const lang = document.getElementById('lang-select').value;
+            if (!translations[lang]) return;
+            btn.textContent = theme === 'dark' ? translations[lang].themeLight : translations[lang].themeDark;
+        }
+
+        if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        btn.onclick = () => {
+            let theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeButton();
+        };
+        init();
+    </script></body></html>

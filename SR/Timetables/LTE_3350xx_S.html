@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fcfcfc; --text-color: #222; --header-text: #333; --table-bg: #ffffff;
+            --station-bg: #e5e5e5; --border-color: #666; --metadata-label-bg: #e5e5e5;
+            --terminal-row-bg: #d0d0d0; --box-shadow: rgba(0,0,0,0.05);
+            --tip-bg: #eef7ff; --tip-text: #2c3e50;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --text-color: #e0e0e0; --header-text: #ffffff; --table-bg: #1e1e1e;
+            --station-bg: #2d2d2d; --border-color: #444; --metadata-label-bg: #2d2d2d;
+            --terminal-row-bg: #252525; --box-shadow: rgba(0,0,0,0.3);
+            --tip-bg: #1a2635; --tip-text: #d1d9e0;
+        }
+        body { font-family: 'Barlow Semi Condensed', sans-serif; margin: 25px; color: var(--text-color); background-color: var(--bg-color); transition: all 0.2s ease; }
+        .back-link-container { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .back-link { 
+            display: inline-flex; align-items: center; text-decoration: none; color: #ffffff; 
+            background: #2c3e50; padding: 10px 22px; border-radius: 50px; font-weight: 600; 
+            font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: all 0.2s ease;
+        }
+        .back-link:hover { background: #34495e; transform: scale(1.03); color: #fff; }
+        .controls { display: flex; gap: 10px; }
+        select, #theme-toggle { cursor: pointer; padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border-color); background: var(--table-bg); color: var(--text-color); font-weight: 600; font-family: inherit; transition: all 0.2s; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 3px solid #2c3e50; padding-bottom: 10px; }
+        .train-category-box { background: #FF23E9; color: #FFFFFF; padding: 5px 15px; font-weight: 700; border-radius: 4px; font-size: 18px; text-transform: uppercase; line-height: 1; }
+        h1 { margin: 0; font-size: 26px; color: var(--header-text); font-weight: 700; }
+        
+        .status-box { margin: 20px 0; padding: 12px 18px; border-radius: 6px; font-size: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 6px var(--box-shadow); border-left: 6px solid; }
+        .status-info { background-color: var(--tip-bg); border-color: #3498db; color: var(--tip-text); }
+
+        .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 10px; box-shadow: 0 2px 8px var(--box-shadow); }
+        table { border-collapse: separate; border-spacing: 0; font-size: 12px; width: auto; background: var(--table-bg); }
+        th, td { border-right: 1.2px solid var(--border-color); border-bottom: 1px dotted var(--border-color); padding: 3px 6px; text-align: center; }
+        
+        .time-cell-arr { border-bottom: 1.5px solid var(--border-color) !important; }
+
+        .header-dark { background: #FF23E9 !important; color: #FFFFFF !important; border-bottom: 2.5px solid #000; font-size: 15px; padding: 6px; font-weight: 700; position: sticky; top: 0; z-index: 20; }
+        th.sticky-col { position: sticky; left: 0; z-index: 40 !important; background: #FF23E9 !important; }
+        .station-name-cell { text-align: left !important; background: var(--station-bg) !important; position: sticky; left: 0; min-width: 185px; z-index: 30; font-size: 14px; border-right: none !important; }
+        .bold-row-text { font-weight: 700; }
+        .dir-col { background: var(--station-bg) !important; position: sticky; left: 198px; width: 32px !important; min-width: 32px !important; font-size: 11px; font-weight: 700; z-index: 30; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-label { text-align: right !important; font-weight: 700; background: var(--metadata-label-bg) !important; position: sticky; left: 0; min-width: 231.5px; z-index: 30; font-size: 13px; border-right: 2.5px solid var(--text-color) !important; }
+        .metadata-value { font-weight: 700; font-size: 12px; background: var(--station-bg) !important; }
+        .time-cell { font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 65px; }
+        .bold-time { font-weight: 700; }
+        .row-terminal td { border-top: 2.5px solid var(--text-color) !important; border-bottom: 2.5px solid var(--text-color) !important; background: var(--terminal-row-bg) !important; }
+        .badge-ph { background: #1e7e34; color: white; padding: 1px 3px; font-size: 10px; border-radius: 2px; margin-left: 5px; }
+        .badge-pt { background: #ffc107; color: black; padding: 1px 4px; font-size: 10px; border-radius: 2px; margin-left: 5px; }
+        
+        .notes-section { margin-top: 20px; font-size: 13px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        .notes-section h3 { margin-top: 0; margin-bottom: 10px; color: var(--header-text); }
+        .legend-item { margin-bottom: 5px; }
+        .tip-box { margin: 15px 5px; padding: 12px 18px; background-color: var(--tip-bg); border-left: 5px solid #3498db; border-radius: 4px; font-size: 14px; color: var(--tip-text); display: flex; align-items: center; gap: 12px; }
+    </style></head><body>
+    
+    <div class="back-link-container">
+        <a href="../" class="back-link" id="txt-back_link">...</a>
+        <div class="controls">
+            <select id="lang-select" onchange="applyLang()">
+                <option value="cs">© CZ</option>
+                <option value="en">GB EN</option>
+            </select>
+            <button id="theme-toggle">🌙</button>
+        </div>
+    </div>
+
+    <div class="header-row">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="train-category-box">LTE</div>
+            <h1>3350xx | Kraków Olsza - Kraków Nowa Huta NHEO</h1>
+        </div>
+        <div style="font-size: 15px; font-style: italic; font-weight: 600;"><span id="txt-valid_from_prefix">...</span> 25. 02. 2026</div>
+    </div><div class="table-container"><table><thead><tr><th class="header-dark sticky-col" colspan="2" style="border-right: 2.5px solid #333 !important;" id="txt-station_header">STANICE</th>
+        <th class='header-dark'>335000</th><th class='header-dark'>335002</th><th class='header-dark'>335004</th><th class='header-dark'>335006</th><th class='header-dark'>335008</th><th class='header-dark'>335010</th><th class='header-dark'>335012</th><th class='header-dark'>335014</th><th class='header-dark'>335016</th><th class='header-dark'>335018</th><th class='header-dark'>335020</th><th class='header-dark'>335022</th></tr></thead><tbody>
+        <tr><td class='metadata-label' colspan='2' id="txt-consist_label">Řazení</td><td class='metadata-value'>EU07-005</td><td class='metadata-value'>ET22-644</td><td class='metadata-value'>ET25-002</td><td class='metadata-value'>ET22-836</td><td class='metadata-value'>E6ACTa-016</td><td class='metadata-value'>EU07-096</td><td class='metadata-value'>EU07-070+EU07-153</td><td class='metadata-value'>E186-134</td><td class='metadata-value'>EP08-013</td><td class='metadata-value'>E6ACTadb-027</td><td class='metadata-value'>EU07-092+EU07-085</td><td class='metadata-value'>E6ACTa-014</td></tr>
+        <tr class='row-terminal'><td class='metadata-label' colspan='2' id="txt-from_label">Ze stanice</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td><td class='metadata-value'>Kraków Olsza</td></tr><tr><td class='station-name-cell '>Kraków Olsza</td><td class='dir-col'></td><td class='time-cell '>00:21</td><td class='time-cell '>02:21</td><td class='time-cell '>04:21</td><td class='time-cell '>06:21</td><td class='time-cell '>08:21</td><td class='time-cell '>10:21</td><td class='time-cell '>12:21</td><td class='time-cell '>14:21</td><td class='time-cell '>16:21</td><td class='time-cell '>18:21</td><td class='time-cell '>20:21</td><td class='time-cell '>22:21</td></tr><tr><td class='station-name-cell '>Kraków Przedmieście</td><td class='dir-col'></td><td class='time-cell '>00:23</td><td class='time-cell '>02:23</td><td class='time-cell '>04:23</td><td class='time-cell '>06:23</td><td class='time-cell '>08:23</td><td class='time-cell '>10:23</td><td class='time-cell '>12:23</td><td class='time-cell '>14:23</td><td class='time-cell '>16:23</td><td class='time-cell '>18:23</td><td class='time-cell '>20:23</td><td class='time-cell '>22:23</td></tr><tr><td class='station-name-cell '>Kraków Batowice</td><td class='dir-col'></td><td class='time-cell '>00:26</td><td class='time-cell '>02:26</td><td class='time-cell '>04:26</td><td class='time-cell '>06:26</td><td class='time-cell '>08:26</td><td class='time-cell '>10:26</td><td class='time-cell '>12:26</td><td class='time-cell '>14:26</td><td class='time-cell '>16:26</td><td class='time-cell '>18:26</td><td class='time-cell '>20:26</td><td class='time-cell '>22:26</td></tr><tr><td class='station-name-cell '>Dłubnia</td><td class='dir-col'></td><td class='time-cell '>00:28</td><td class='time-cell '>02:28</td><td class='time-cell '>04:28</td><td class='time-cell '>06:28</td><td class='time-cell '>08:28</td><td class='time-cell '>10:28</td><td class='time-cell '>12:28</td><td class='time-cell '>14:28</td><td class='time-cell '>16:28</td><td class='time-cell '>18:28</td><td class='time-cell '>20:28</td><td class='time-cell '>22:28</td></tr><tr class='row-terminal'><td class='metadata-label' colspan='2' id="txt-to_label">Do stanice</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td><td class='metadata-value'>Kraków Nowa Huta NHEO</td></tr></tbody></table></div><div class="tip-box"><span style="font-size: 20px;">💡</span><div id="txt-table_tip">...</div></div>
+    <div class="notes-section">
+        <h3 id="txt-notes_title">Poznámky</h3>
+        <div class="legend-item"><span class="badge-ph">PH</span> <span id="txt-ph_desc">Zastavení pro nástup</span></div>
+        <div class="legend-item"><span class="badge-pt">PT</span> <span id="txt-pt_desc">Technické zastavení</span></div>
+    </div><script>
+        let translations = {};
+        async function init() {
+            try {
+                const resp = await fetch('../translations.json');
+                translations = await resp.json();
+                const savedLang = localStorage.getItem('lang') || 'cs';
+                document.getElementById('lang-select').value = savedLang;
+                applyLang();
+            } catch(e) { console.error("Chyba načítání translations.json", e); }
+        }
+
+        function applyLang() {
+            const lang = document.getElementById('lang-select').value;
+            localStorage.setItem('lang', lang);
+            const t = translations[lang];
+            if (!t) return;
+            
+            // Projde všechny klíče v překladu a najde VŠECHNY elementy s daným ID
+            Object.keys(t).forEach(key => {
+                const elements = document.querySelectorAll('[id="txt-' + key + '"]');
+                elements.forEach(el => { el.innerHTML = t[key]; });
+            });
+            updateThemeButton();
+        }
+
+        const btn = document.getElementById('theme-toggle');
+        function updateThemeButton() {
+            const theme = document.documentElement.getAttribute('data-theme');
+            const lang = document.getElementById('lang-select').value;
+            if (!translations[lang]) return;
+            btn.textContent = theme === 'dark' ? translations[lang].themeLight : translations[lang].themeDark;
+        }
+
+        if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        btn.onclick = () => {
+            let theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeButton();
+        };
+        init();
+    </script></body></html>

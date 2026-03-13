@@ -719,6 +719,72 @@
   .hp-yellow { color: #fde047; }
   .hp-red   { color: #f87171; }
   em { color: var(--green); font-style: normal; }
+
+  /* ======= FAQ ======= */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .faq-item {
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 19px;
+    text-align: left;
+    padding: 18px 22px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .faq-q:hover {
+    background: rgba(74,222,128,0.05);
+    color: var(--green);
+  }
+
+  .faq-q.open {
+    color: var(--green);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq-arrow {
+    font-size: 10px;
+    color: var(--green2);
+    flex-shrink: 0;
+    transition: transform 0.25s;
+  }
+
+  .faq-q.open .faq-arrow {
+    transform: rotate(180deg);
+  }
+
+  .faq-a {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--muted);
+    line-height: 1.7;
+    padding: 0 22px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+
+  .faq-a.open {
+    max-height: 300px;
+    padding: 16px 22px 20px;
+  }
 </style>
 </head>
 <body>
@@ -749,6 +815,7 @@
   <a href="#perky">Perky</a>
   <a href="#ekonomika">Ekonomika</a>
   <a href="#ostatni">Profil & Level</a>
+  <a href="#faq">FAQ</a>
 </nav>
 
 <main>
@@ -1461,6 +1528,75 @@
   </div>
 </section>
 
+<!-- ======= FAQ ======= -->
+<section id="faq">
+  <h2 class="section-title">❓ Časté otázky</h2>
+
+  <div class="faq-list">
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🌱 Jak meloun roste?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Meloun roste automaticky každou minutu. Rychlost růstu závisí na druhu melounu, aktuálním počasí a úrovni vláhy. Čím vyšší vláha, tím rychleji meloun přibývá na váze.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🌙 Jak meloun vypěstovat v noci, kdy nejsou uživatelé aktivní?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Doporučujeme před spaním doplnit vláhu na maximum pomocí perku <em>Doplnění vláhy</em>. Meloun tak poroste do doby, než mu začne docházet voda — není tak nutné ho zalévat. Náročnější melouny (žlutý, cukrový) se ale pro noční pěstování příliš nehodí. Druhá možnost je zakoupit perk <em>Neomezené zalévání</em> — pak můžeš zalévat celou noc sám bez dalších uživatelů.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🟪 Co to je hranatý meloun a jak ho získám?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Hranatý meloun je vzácná varianta, která se může objevit pouze u melounu vodního Baby (10% šance) nebo melounu vodního (5% šance). Nelze ho nijak vynutit — je to čistě náhoda. Poznáš ho podle fialové barvy embeddované zprávy při sklizni a textu „ČTVERCOVÝ MELOUN!".
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🪙 Jak vydělat co nejvíce peněz?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Udržuj vláhu co nejvýše po celou dobu pěstování — tím bude mít meloun při sklizni větší váhu a větší váha znamená větší odměnu. Aktivně se zapojuj do všech aktivit (zalévání, slimáci, plevel), protože to zvyšuje tvůj harvest bonus při sklizni. Získané mince investuj zpět do vylepšení, zejména do <em>konve</em> a <em>substrátu</em>.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🎮 Co to jsou minihry a jak je hrát?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Existují tři minihry — chytání slimáků, trhání plevele a sklízení melounu. Všechny je nutné spustit ručně. Chytání slimáků a trhání plevele trvá 8 sekund — klikej co nejrychleji na červená tlačítka. Sklizeň je možná až při dosažení 100 % růstu — zobrazí se tlačítka s ikonou 🍉 a máš opět 8 sekund. Čím více kliknutí, tím vyšší odměna.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🗳️ Jak funguje hlasování o melounu?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Po každé sklizni se hlasuje o tom, jaký druh melounu se bude pěstovat. Hlasování probíhá přes tlačítka přímo v embeddované zprávě. Vítězný meloun se automaticky na základě hlasování vybere a následně uvolní k zasazení.
+      </div>
+    </div>
+
+  </div>
+</section>
+
 </main>
 
 <!-- FOOTER -->
@@ -1523,6 +1659,22 @@
   }, { threshold: 0.3 });
 
   fillBars.forEach(b => barObserver.observe(b));
+
+  // FAQ accordion
+  function toggleFaq(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = btn.classList.contains('open');
+    // close all
+    document.querySelectorAll('.faq-q.open').forEach(b => {
+      b.classList.remove('open');
+      b.nextElementSibling.classList.remove('open');
+    });
+    // open clicked if it was closed
+    if (!isOpen) {
+      btn.classList.add('open');
+      answer.classList.add('open');
+    }
+  }
 </script>
 </body>
 </html>

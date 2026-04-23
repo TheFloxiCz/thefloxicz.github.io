@@ -1,11 +1,14 @@
 <script>
     let rawData = []; // Data se naplní ze souboru
     let chart;
-    const ctx = document.getElementById('priceChart').getContext('2d');
+    let ctx; // Definujeme globálně, ale naplníme až po načtení stránky
 
     async function loadCSV() {
         try {
             const response = await fetch('data.csv');
+            if (!response.ok) {
+                throw new Error('Soubor data.csv nebyl nalezen');
+            }
             const data = await response.text();
             
             // Rozdělení CSV na řádky a následně na sloupce
@@ -22,7 +25,8 @@
             initDashboard();
         } catch (error) {
             console.error('Chyba při načítání CSV:', error);
-            document.getElementById('last-event-label').innerText = "Chyba při načítání data.csv";
+            const label = document.getElementById('last-event-label');
+            if (label) label.innerText = "Chyba: data.csv nenalezen nebo je prázdný";
         }
     }
 
@@ -32,23 +36,32 @@
         // Aktuální čas pro hlavičku
         const now = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-        document.getElementById('current-time').innerText = now.toLocaleDateString('cs-CZ', options).toUpperCase();
+        const timeElement = document.getElementById('current-time');
+        if (timeElement) timeElement.innerText = now.toLocaleDateString('cs-CZ', options).toUpperCase();
 
         // Poslední záznam
         const last = rawData[rawData.length - 1];
-        document.getElementById('last-price').innerText = last.p.toLocaleString() + " CZK";
-        document.getElementById('last-event-label').innerText = "⚡ POSLEDNÍ AKCE: " + (last.e || "Žádná");
+        const lastPriceElement = document.getElementById('last-price');
+        const lastEventElement = document.getElementById('last-event-label');
+        
+        if (lastPriceElement) lastPriceElement.innerText = last.p.toLocaleString() + " CZK";
+        if (lastEventElement) lastEventElement.innerText = "⚡ POSLEDNÍ AKCE: " + (last.e || "Žádná");
 
         // Min/Max za posledních 24h
         const last24h = rawData.slice(-12);
         const prices24h = last24h.map(d => d.p);
-        document.getElementById('high-24h').innerText = Math.max(...prices24h).toLocaleString() + " CZK";
-        document.getElementById('low-24h').innerText = Math.min(...prices24h).toLocaleString() + " CZK";
+        const highElement = document.getElementById('high-24h');
+        const lowElement = document.getElementById('low-24h');
+        
+        if (highElement) highElement.innerText = Math.max(...prices24h).toLocaleString() + " CZK";
+        if (lowElement) lowElement.innerText = Math.min(...prices24h).toLocaleString() + " CZK";
 
         updateChart('all');
     }
 
     function updateChart(range) {
+        if (!ctx) return; // Pokud canvas není připraven, nic neděláme
+
         let filteredData = rawData;
         if (range === '24h') filteredData = rawData.slice(-12);
         if (range === '7d') filteredData = rawData.slice(-84);
@@ -83,8 +96,8 @@
                     pointBorderColor: '#38bdf8',
                     pointBorderWidth: 3,
                     segment: {
-                        borderColor: ctx => {
-                            if (ctx.p1.raw < ctx.p0.raw) return '#fb7185';
+                        borderColor: ctxSegment => {
+                            if (ctxSegment.p1.raw < ctxSegment.p0.raw) return '#fb7185';
                             return '#4ade80';
                         }
                     }
@@ -123,9 +136,18 @@
         });
 
         document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('btn-' + range).classList.add('active');
+        const activeBtn = document.getElementById('btn-' + range);
+        if (activeBtn) activeBtn.classList.add('active');
     }
 
-    // Spuštění načítání při startu
-    loadCSV();
+    // Tady je ta hlavní oprava: Spustíme kód až po kompletním načtení DOMu
+    window.onload = function() {
+        const canvas = document.getElementById('priceChart');
+        if (canvas) {
+            ctx = canvas.getContext('2d');
+            loadCSV();
+        } else {
+            console.error("Element priceChart nebyl nalezen!");
+        }
+    };
 </script>

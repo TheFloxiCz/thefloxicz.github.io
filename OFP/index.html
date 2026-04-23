@@ -14,23 +14,25 @@
         }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 30px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
-        header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
-        header h1 { font-size: 1.1rem; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin: 0; }
-        .time-full { font-size: 2.5rem; font-weight: 800; }
+        header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        header h1 { font-size: 1.1rem; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin: 0; font-weight: 400; }
+        header .time-full { font-size: 2.5rem; font-weight: 800; margin: 0; }
         .dashboard { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .card { background: var(--card); border-radius: 20px; border: 1px solid rgba(255,255,255,0.03); position: relative; overflow: hidden; }
+        .card { background: var(--card); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.03); position: relative; overflow: hidden; transition: border-color 0.3s ease; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--gradient-1), var(--gradient-2)); }
         .price-card { padding: 40px; }
-        .price-main { font-size: 6rem; font-weight: 800; margin: 15px 0; }
+        .price-main { font-size: 6rem; font-weight: 800; margin: 15px 0; line-height: 1; }
+        .trend-indicator { font-size: 1.2rem; font-weight: 600; color: var(--accent); }
         .stats-grid { display: grid; grid-template-rows: 1fr 1fr; gap: 20px; }
         .stat-card { padding: 30px; }
         .stat-value { font-size: 2.8rem; font-weight: 600; }
         .high .stat-value { color: var(--high); }
         .low .stat-value { color: var(--low); }
-        .chart-card { padding: 30px; height: 500px; }
-        .controls { display: flex; gap: 8px; justify-content: flex-end; margin: 10px 0; }
-        button { background: var(--card); border: 1px solid rgba(255,255,255,0.05); color: #94a3b8; padding: 10px 20px; border-radius: 10px; cursor: pointer; }
-        button.active { background: var(--accent); color: var(--bg); }
+        .controls-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+        button { background: var(--card); border: 1px solid rgba(255, 255, 255, 0.03); color: #94a3b8; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; }
+        button.active { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+        .chart-card { padding: 30px; margin-top: 10px; }
+        .chart-container { position: relative; height: 500px; width: 100%; }
     </style>
 </head>
 <body>
@@ -38,17 +40,17 @@
 <div class="container">
     <header>
         <div>
-            <h1>Monitoring Kurzu</h1>
+            <h1>Monitoring Kurzu - Dashboard</h1>
             <div class="time-full" id="current-time">NAČÍTÁNÍ...</div>
         </div>
-        <div style="color: #64748b;">● LIVE UPDATE</div>
+        <div style="font-size: 1.1rem; color: #64748b;">● LIVE UPDATE</div>
     </header>
 
     <div class="dashboard">
         <div class="card price-card">
             <div style="color: #94a3b8;">AKTUÁLNÍ KURZ</div>
             <div class="price-main" id="last-price">0 CZK</div>
-            <div id="last-event-label" style="color: var(--accent);">Čekám na data...</div>
+            <div class="trend-indicator" id="last-event-label">Čekám na data...</div>
         </div>
         <div class="stats-grid">
             <div class="card stat-card high">
@@ -62,14 +64,16 @@
         </div>
     </div>
 
-    <div class="controls">
+    <div class="controls-row">
         <button onclick="updateChart('24h')" id="btn-24h">24H</button>
         <button onclick="updateChart('7d')" id="btn-7d">7D</button>
         <button onclick="updateChart('all')" class="active" id="btn-all">VŠE</button>
     </div>
 
     <div class="card chart-card">
-        <canvas id="priceChart"></canvas>
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -80,63 +84,99 @@
 
     async function loadCSV() {
         try {
-            const response = await fetch('data.csv');
-            if (!response.ok) throw new Error('Soubor data.csv nebyl nalezen');
+            // Přidáváme časové razítko, aby GitHub nutil prohlížeč stáhnout čerstvý soubor
+            const response = await fetch('data.csv?t=' + new Date().getTime());
+            if (!response.ok) throw new Error('Data nenalezena');
             const data = await response.text();
             
             rawData = data.trim().split('\n').map(row => {
                 const [date, price, event] = row.split(',');
-                return { t: date.trim(), p: parseFloat(price), e: event ? event.trim() : "" };
+                return {
+                    t: date.trim(),
+                    p: parseFloat(price),
+                    e: event ? event.trim() : ""
+                };
             });
             initDashboard();
         } catch (error) {
             console.error('Chyba:', error);
-            document.getElementById('last-event-label').innerText = "Chyba: data.csv nenalezen";
+            document.getElementById('last-event-label').innerText = "Chyba načítání CSV";
         }
     }
 
     function initDashboard() {
         if (rawData.length === 0) return;
+
         const now = new Date();
-        document.getElementById('current-time').innerText = now.toLocaleTimeString('cs-CZ');
-        
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        document.getElementById('current-time').innerText = now.toLocaleDateString('cs-CZ', options).toUpperCase();
+
         const last = rawData[rawData.length - 1];
         document.getElementById('last-price').innerText = last.p.toLocaleString() + " CZK";
-        document.getElementById('last-event-label').innerText = "⚡ EVENT: " + (last.e || "Žádná");
+        document.getElementById('last-event-label').innerText = "⚡ POSLEDNÍ AKCE: " + (last.e || "Žádná");
 
-        const last12 = rawData.slice(-12).map(d => d.p);
-        document.getElementById('high-24h').innerText = Math.max(...last12).toLocaleString() + " CZK";
-        document.getElementById('low-24h').innerText = Math.min(...last12).toLocaleString() + " CZK";
+        const last24h = rawData.slice(-12);
+        const prices24h = last24h.map(d => d.p);
+        document.getElementById('high-24h').innerText = Math.max(...prices24h).toLocaleString() + " CZK";
+        document.getElementById('low-24h').innerText = Math.min(...prices24h).toLocaleString() + " CZK";
+
         updateChart('all');
     }
 
     function updateChart(range) {
         if (!ctx) return;
-        let filtered = rawData;
-        if (range === '24h') filtered = rawData.slice(-12);
-        
+        let filteredData = rawData;
+        if (range === '24h') filteredData = rawData.slice(-12);
+        if (range === '7d') filteredData = rawData.slice(-84);
+
+        const labels = filteredData.map(d => d.t);
+        const prices = filteredData.map(d => d.p);
+        const events = filteredData.map(d => d.e);
+
         if (chart) chart.destroy();
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight);
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+        gradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
         chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: filtered.map(d => d.t),
+                labels: labels,
                 datasets: [{
-                    data: filtered.map(d => d.p),
+                    data: prices,
                     borderColor: '#38bdf8',
-                    tension: 0.4,
+                    borderWidth: 3,
                     fill: true,
-                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                    pointRadius: 2
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    segment: {
+                        borderColor: c => c.p1.raw < c.p0.raw ? '#fb7185' : '#4ade80'
+                    }
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { position: 'right', grid: { color: 'rgba(255,255,255,0.05)' } } }
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: (context) => {
+                                const idx = context[0].dataIndex;
+                                return events[idx] ? "\nUDÁLOST: " + events[idx] : "";
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                    y: { position: 'right', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                }
             }
         });
-        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+
+        document.querySelectorAll('.controls-row button').forEach(btn => btn.classList.remove('active'));
         document.getElementById('btn-' + range).classList.add('active');
     }
 

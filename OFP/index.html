@@ -1,0 +1,131 @@
+<script>
+    let rawData = []; // Data se naplní ze souboru
+    let chart;
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
+    async function loadCSV() {
+        try {
+            const response = await fetch('data.csv');
+            const data = await response.text();
+            
+            // Rozdělení CSV na řádky a následně na sloupce
+            rawData = data.trim().split('\n').map(row => {
+                const [date, price, event] = row.split(',');
+                return {
+                    t: date.trim(),
+                    p: parseFloat(price),
+                    e: event ? event.trim() : ""
+                };
+            });
+
+            // Po načtení dat spustíme zbytek vizualizace
+            initDashboard();
+        } catch (error) {
+            console.error('Chyba při načítání CSV:', error);
+            document.getElementById('last-event-label').innerText = "Chyba při načítání data.csv";
+        }
+    }
+
+    function initDashboard() {
+        if (rawData.length === 0) return;
+
+        // Aktuální čas pro hlavičku
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        document.getElementById('current-time').innerText = now.toLocaleDateString('cs-CZ', options).toUpperCase();
+
+        // Poslední záznam
+        const last = rawData[rawData.length - 1];
+        document.getElementById('last-price').innerText = last.p.toLocaleString() + " CZK";
+        document.getElementById('last-event-label').innerText = "⚡ POSLEDNÍ AKCE: " + (last.e || "Žádná");
+
+        // Min/Max za posledních 24h
+        const last24h = rawData.slice(-12);
+        const prices24h = last24h.map(d => d.p);
+        document.getElementById('high-24h').innerText = Math.max(...prices24h).toLocaleString() + " CZK";
+        document.getElementById('low-24h').innerText = Math.min(...prices24h).toLocaleString() + " CZK";
+
+        updateChart('all');
+    }
+
+    function updateChart(range) {
+        let filteredData = rawData;
+        if (range === '24h') filteredData = rawData.slice(-12);
+        if (range === '7d') filteredData = rawData.slice(-84);
+        if (range === '30d') filteredData = rawData.slice(-360);
+
+        const labels = filteredData.map(d => d.t);
+        const prices = filteredData.map(d => d.p);
+        const events = filteredData.map(d => d.e);
+
+        if (chart) chart.destroy();
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight);
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+        gradient.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Cena',
+                    data: prices,
+                    borderColor: '#38bdf8',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#38bdf8',
+                    pointBorderWidth: 3,
+                    segment: {
+                        borderColor: ctx => {
+                            if (ctx.p1.raw < ctx.p0.raw) return '#fb7185';
+                            return '#4ade80';
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, 
+                    tooltip: {
+                        backgroundColor: '#111b2d',
+                        titleFont: { size: 14, weight: '600' },
+                        bodyFont: { size: 16 },
+                        padding: 15,
+                        cornerRadius: 12,
+                        borderColor: 'rgba(56, 189, 248, 0.2)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) { 
+                                return context.parsed.y.toLocaleString() + ' CZK'; 
+                            },
+                            afterBody: function(context) {
+                                const idx = context[0].dataIndex;
+                                return events[idx] ? "\nUDÁLOST: " + events[idx] : "";
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b', maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
+                    y: { grid: { color: 'rgba(255, 255, 255, 0.03)' }, ticks: { color: '#64748b' }, position: 'right' }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+
+        document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + range).classList.add('active');
+    }
+
+    // Spuštění načítání při startu
+    loadCSV();
+</script>

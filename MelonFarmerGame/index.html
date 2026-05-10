@@ -13,6 +13,8 @@
     --red:     #f87171;
     --yellow:  #fde047;
     --pink:    #fb7185;
+    --gem:     #a78bfa;
+    --gem2:    #7c3aed;
     --dark:    #0a0f0a;
     --dark2:   #111811;
     --dark3:   #1a241a;
@@ -26,7 +28,6 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html { scroll-behavior: smooth; }
 
   body {
@@ -38,30 +39,19 @@
     overflow-x: hidden;
   }
 
-  /* SCANLINES OVERLAY */
   body::before {
     content: '';
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
     pointer-events: none;
     z-index: 9999;
   }
 
-  /* PIXEL BORDER MIXIN */
   .px-border {
     border: 3px solid var(--border);
-    box-shadow:
-      inset 0 0 0 2px var(--dark),
-      0 0 0 2px var(--green3),
-      4px 4px 0 rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 0 2px var(--dark), 0 0 0 2px var(--green3), 4px 4px 0 rgba(0,0,0,0.6);
   }
 
   /* ======= HEADER ======= */
@@ -78,8 +68,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(74,222,128,0.08) 0%, transparent 70%);
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(74,222,128,0.08) 0%, transparent 70%);
   }
 
   .header-melon {
@@ -99,9 +88,7 @@
     font-family: var(--pixel);
     font-size: clamp(16px, 3vw, 28px);
     color: var(--green);
-    text-shadow:
-      3px 3px 0 var(--green3),
-      0 0 30px rgba(74,222,128,0.4);
+    text-shadow: 3px 3px 0 var(--green3), 0 0 30px rgba(74,222,128,0.4);
     letter-spacing: 2px;
     margin-bottom: 12px;
   }
@@ -133,6 +120,12 @@
     box-shadow: 2px 2px 0 var(--green3);
   }
 
+  .badge.gem-badge-header {
+    border-color: var(--gem2);
+    color: var(--gem);
+    box-shadow: 2px 2px 0 #3b0764;
+  }
+
   /* ======= NAV ======= */
   nav {
     position: sticky;
@@ -152,7 +145,7 @@
     font-size: 7px;
     color: var(--muted);
     text-decoration: none;
-    padding: 14px 12px;
+    padding: 14px 10px;
     display: block;
     transition: color 0.15s, background 0.15s;
     border-bottom: 3px solid transparent;
@@ -172,10 +165,7 @@
     padding: 40px 20px 80px;
   }
 
-  /* ======= SECTION ======= */
-  section {
-    margin-bottom: 64px;
-  }
+  section { margin-bottom: 64px; }
 
   .section-title {
     font-family: var(--pixel);
@@ -279,10 +269,11 @@
     margin-bottom: 12px;
   }
 
-  .diff-mala    { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid #4ade80; }
+  .diff-mala    { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid #4ade80; }
   .diff-stredni { background: rgba(253,224,71,0.15);  color: #fde047; border: 1px solid #fde047; }
   .diff-vysoka  { background: rgba(251,146,60,0.15);  color: #fb923c; border: 1px solid #fb923c; }
   .diff-narocna { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid #f87171; }
+  .diff-event   { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid #a78bfa; }
 
   .melon-desc {
     font-family: var(--mono);
@@ -319,9 +310,7 @@
   }
 
   /* ======= PROGRESS BAR ======= */
-  .progress-container {
-    margin: 8px 0;
-  }
+  .progress-container { margin: 8px 0; }
 
   .progress-label {
     font-family: var(--pixel);
@@ -372,12 +361,7 @@
   }
 
   .weather-card:hover { transform: translateY(-2px); }
-
-  .weather-icon {
-    font-size: 44px;
-    display: block;
-    margin-bottom: 10px;
-  }
+  .weather-icon { font-size: 44px; display: block; margin-bottom: 10px; }
 
   .weather-name {
     font-family: var(--pixel);
@@ -397,7 +381,6 @@
   }
 
   .weather-stat:last-child { border-bottom: none; }
-
   .weather-stat-key { color: var(--muted); font-size: 15px; }
 
   .good  { color: #4ade80; }
@@ -419,16 +402,6 @@
     font-size: 9px;
     color: var(--green);
     margin-bottom: 8px;
-  }
-
-  .upgrade-formula {
-    background: var(--dark3);
-    border: 1px solid var(--border);
-    padding: 10px 12px;
-    font-family: var(--mono);
-    font-size: 16px;
-    color: var(--yellow);
-    margin: 12px 0;
   }
 
   /* ======= STAGES TABLE ======= */
@@ -454,19 +427,9 @@
     background: var(--card);
   }
 
-  .stage-pct {
-    font-family: var(--pixel);
-    font-size: 8px;
-    color: var(--green);
-  }
-
+  .stage-pct { font-family: var(--pixel); font-size: 8px; color: var(--green); }
   .stage-emoji { font-size: 24px; }
-
-  .stage-name {
-    font-family: var(--mono);
-    font-size: 18px;
-    color: var(--text);
-  }
+  .stage-name { font-family: var(--mono); font-size: 18px; color: var(--text); }
 
   /* ======= HP SECTION ======= */
   .hp-grid {
@@ -482,19 +445,8 @@
   }
 
   .hp-icon { font-size: 28px; margin-bottom: 8px; display: block; }
-
-  .hp-range {
-    font-family: var(--pixel);
-    font-size: 8px;
-    color: var(--yellow);
-    margin-bottom: 4px;
-  }
-
-  .hp-desc {
-    font-family: var(--mono);
-    font-size: 16px;
-    color: var(--muted);
-  }
+  .hp-range { font-family: var(--pixel); font-size: 8px; color: var(--yellow); margin-bottom: 4px; }
+  .hp-desc  { font-family: var(--mono); font-size: 16px; color: var(--muted); }
 
   /* ======= TIP BOXES ======= */
   .tip-box {
@@ -522,6 +474,13 @@
     color: #fee2e2;
   }
 
+  .tip-box.gem-tip {
+    background: rgba(167,139,250,0.04);
+    border-color: var(--gem2);
+    border-left-color: var(--gem);
+    color: #ede9fe;
+  }
+
   .tip-label {
     font-family: var(--pixel);
     font-size: 7px;
@@ -530,8 +489,9 @@
     margin-bottom: 8px;
   }
 
-  .tip-box.warn .tip-label { color: var(--yellow); }
+  .tip-box.warn .tip-label  { color: var(--yellow); }
   .tip-box.danger .tip-label { color: var(--red); }
+  .tip-box.gem-tip .tip-label { color: var(--gem); }
 
   /* ======= PERK CARDS ======= */
   .perk-card {
@@ -544,9 +504,7 @@
   }
 
   .perk-card:hover { transform: translateX(4px); }
-
   .perk-icon { font-size: 36px; flex-shrink: 0; }
-
   .perk-body { flex: 1; }
 
   .perk-name {
@@ -560,6 +518,14 @@
     font-family: var(--pixel);
     font-size: 7px;
     color: var(--yellow);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .perk-gem-cost {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--gem);
     margin-bottom: 8px;
     display: block;
   }
@@ -571,7 +537,7 @@
     line-height: 1.6;
   }
 
-  /* ======= HOWTO STEPS ======= */
+  /* ======= STEPS ======= */
   .steps {
     counter-reset: steps;
     display: flex;
@@ -606,31 +572,182 @@
     margin-bottom: 6px;
   }
 
-  .step p {
+  .step p { font-family: var(--mono); font-size: 17px; color: var(--text); line-height: 1.6; }
+
+  /* ======= COMMAND CARDS ======= */
+  .cmd-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cmd-card {
+    background: var(--card);
+    padding: 20px 22px;
+    border-left: 4px solid var(--green2);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: start;
+    transition: background 0.15s;
+  }
+
+  .cmd-card:hover { background: #131f13; }
+
+  .cmd-card.admin-cmd { border-left-color: var(--yellow); }
+  .cmd-card.dev-cmd   { border-left-color: var(--red); }
+
+  .cmd-name {
+    font-family: var(--pixel);
+    font-size: 9px;
+    color: var(--green);
+    margin-bottom: 6px;
+    font-weight: normal;
+  }
+
+  .cmd-card.admin-cmd .cmd-name { color: var(--yellow); }
+  .cmd-card.dev-cmd .cmd-name   { color: var(--red); }
+
+  .cmd-desc {
     font-family: var(--mono);
     font-size: 17px;
     color: var(--text);
     line-height: 1.6;
+    grid-column: 1 / -1;
   }
 
-  /* ======= BLINKING CURSOR ======= */
-  .blink {
-    animation: blink 1s steps(1) infinite;
+  .cmd-args {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--muted);
+    grid-column: 1 / -1;
+    margin-top: 4px;
   }
+
+  .perm-badge {
+    font-family: var(--pixel);
+    font-size: 6px;
+    padding: 3px 8px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .perm-user  { background: rgba(74,222,128,0.1);  color: #4ade80; border: 1px solid #16a34a; }
+  .perm-admin { background: rgba(253,224,71,0.1);  color: #fde047; border: 1px solid #ca8a04; }
+  .perm-dev   { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid #991b1b; }
+
+  /* ======= QUEST CARDS ======= */
+  .quest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .quest-card {
+    background: var(--card);
+    padding: 22px 20px;
+    border-top: 3px solid var(--green2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .quest-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 40px; height: 40px;
+    background: radial-gradient(circle at top right, rgba(74,222,128,0.08), transparent);
+  }
+
+  .quest-emoji { font-size: 36px; display: block; margin-bottom: 10px; }
+
+  .quest-name {
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+
+  .quest-desc {
+    font-family: var(--mono);
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ======= GEM CARDS ======= */
+  .gem-section {
+    background: rgba(124,58,237,0.06);
+    border: 2px solid var(--gem2);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .gem-title {
+    font-family: var(--pixel);
+    font-size: 10px;
+    color: var(--gem);
+    margin-bottom: 14px;
+  }
+
+  /* ======= MYSTERY EVENT CARD ======= */
+  .mystery-card {
+    background: var(--card);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #4c1d95;
+    box-shadow: inset 0 0 0 1px #1a0538, 0 0 30px rgba(124,58,237,0.1), 4px 4px 0 rgba(0,0,0,0.6);
+  }
+
+  .mystery-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, #7c3aed, #a78bfa);
+  }
+
+  .mystery-card::after {
+    content: '?';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--pixel);
+    font-size: 60px;
+    color: rgba(167,139,250,0.06);
+    pointer-events: none;
+  }
+
+  .mystery-emoji {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    filter: brightness(0) invert(0.4) sepia(1) saturate(3) hue-rotate(240deg);
+    opacity: 0.7;
+  }
+
+  .mystery-name {
+    font-family: var(--pixel);
+    font-size: 9px;
+    color: var(--gem);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ======= BLINK / PIXEL RAIN ======= */
+  .blink { animation: blink 1s steps(1) infinite; }
 
   @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
 
-  /* ======= PIXEL DIVIDER ======= */
   .px-divider {
     height: 4px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--green2) 0px, var(--green2) 8px,
-      transparent 8px, transparent 12px
-    );
+    background: repeating-linear-gradient(90deg, var(--green2) 0px, var(--green2) 8px, transparent 8px, transparent 12px);
     margin: 40px 0;
     opacity: 0.4;
   }
@@ -643,22 +760,14 @@
     text-align: center;
   }
 
-  footer p {
-    font-family: var(--pixel);
-    font-size: 7px;
-    color: var(--muted);
-    line-height: 2;
-  }
-
+  footer p { font-family: var(--pixel); font-size: 7px; color: var(--muted); line-height: 2; }
   footer span.green { color: var(--green); }
 
   /* ======= SCROLL TO TOP ======= */
   #scrolltop {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 44px;
-    height: 44px;
+    bottom: 24px; right: 24px;
+    width: 44px; height: 44px;
     background: var(--green2);
     border: 3px solid var(--green);
     color: var(--dark);
@@ -675,12 +784,9 @@
     z-index: 200;
   }
 
-  #scrolltop.visible {
-    opacity: 1;
-    pointer-events: all;
-  }
+  #scrolltop.visible { opacity: 1; pointer-events: all; }
 
-  /* ======= ANIMATED PIXEL RAIN HEADER BG ======= */
+  /* ======= PIXEL RAIN ======= */
   #pixel-rain {
     position: absolute;
     top: 0; left: 0;
@@ -692,8 +798,7 @@
 
   .px-drop {
     position: absolute;
-    width: 4px;
-    height: 4px;
+    width: 4px; height: 4px;
     background: var(--green2);
     opacity: 0;
     animation: px-fall linear infinite;
@@ -704,33 +809,9 @@
     100% { opacity: 0;   transform: translateY(120px); }
   }
 
-  /* ======= RESPONSIVE ======= */
-  @media (max-width: 600px) {
-    nav a { font-size: 6px; padding: 12px 8px; }
-    header h1 { font-size: 13px; }
-    .step { padding-left: 56px; }
-    .melon-stats { grid-template-columns: 1fr; }
-  }
-
-  /* ======= COIN ICON ======= */
-  .coin { color: #fde047; }
-  .xp   { color: #a78bfa; }
-  .hp-green { color: #4ade80; }
-  .hp-yellow { color: #fde047; }
-  .hp-red   { color: #f87171; }
-  em { color: var(--green); font-style: normal; }
-
   /* ======= FAQ ======= */
-  .faq-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .faq-item {
-    background: var(--card);
-    overflow: hidden;
-  }
+  .faq-list { display: flex; flex-direction: column; gap: 8px; }
+  .faq-item { background: var(--card); overflow: hidden; }
 
   .faq-q {
     width: 100%;
@@ -749,26 +830,11 @@
     transition: background 0.15s, color 0.15s;
   }
 
-  .faq-q:hover {
-    background: rgba(74,222,128,0.05);
-    color: var(--green);
-  }
+  .faq-q:hover { background: rgba(74,222,128,0.05); color: var(--green); }
+  .faq-q.open  { color: var(--green); border-bottom: 1px solid var(--border); }
 
-  .faq-q.open {
-    color: var(--green);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .faq-arrow {
-    font-size: 10px;
-    color: var(--green2);
-    flex-shrink: 0;
-    transition: transform 0.25s;
-  }
-
-  .faq-q.open .faq-arrow {
-    transform: rotate(180deg);
-  }
+  .faq-arrow { font-size: 10px; color: var(--green2); flex-shrink: 0; transition: transform 0.25s; }
+  .faq-q.open .faq-arrow { transform: rotate(180deg); }
 
   .faq-a {
     font-family: var(--mono);
@@ -781,9 +847,20 @@
     transition: max-height 0.3s ease, padding 0.3s ease;
   }
 
-  .faq-a.open {
-    max-height: 300px;
-    padding: 16px 22px 20px;
+  .faq-a.open { max-height: 400px; padding: 16px 22px 20px; }
+
+  /* ======= MISC ======= */
+  .coin { color: #fde047; }
+  .xp   { color: #a78bfa; }
+  .gem-color { color: var(--gem); }
+  em { color: var(--green); font-style: normal; }
+
+  @media (max-width: 600px) {
+    nav a { font-size: 6px; padding: 12px 6px; }
+    header h1 { font-size: 13px; }
+    .step { padding-left: 56px; }
+    .melon-stats { grid-template-columns: 1fr; }
+    .cmd-card { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -796,24 +873,29 @@
   <h1>MelonFarmer Game<span class="blink">_</span></h1>
   <p>Vše, co potřebuješ vědět o pěstování melounu</p>
   <div class="header-badges">
-    <span class="badge">🌱 4 druhy melounů</span>
+    <span class="badge">🌱 Druhy plodin</span>
     <span class="badge">☀️ Dynamické počasí</span>
     <span class="badge">💰 Ekonomika</span>
-    <span class="badge">⚔️ Perky & vylepšení</span>
+    <span class="badge">⚡ Perky & vylepšení</span>
+    <span class="badge gem-badge-header">💎 Gemy & questy</span>
+    <span class="badge gem-badge-header">✨ Eventové plodiny</span>
   </div>
 </header>
 
 <!-- NAV -->
 <nav id="nav">
   <a href="#uvod" class="active">Úvod</a>
+  <a href="#prikazy">Příkazy</a>
   <a href="#jak-hrat">Jak hrát</a>
   <a href="#faze">Fáze růstu</a>
   <a href="#melouny">Melouny</a>
+  <a href="#event-plodiny">Event plodiny</a>
   <a href="#pocasi">Počasí</a>
   <a href="#zdravi">HP & Škůdci</a>
   <a href="#vylepseni">Vylepšení</a>
   <a href="#perky">Perky</a>
   <a href="#ekonomika">Ekonomika</a>
+  <a href="#questy">Questy</a>
   <a href="#ostatni">Profil & Level</a>
   <a href="#faq">FAQ</a>
 </nav>
@@ -829,6 +911,7 @@
       MelonFarmer Game je Discord hra, ve které celý server <em>spolupracuje</em> na pěstování melounu.
       Hráči společně zalévají, brání meloun před škůdci a plevelem, sbírají úrodu a investují mince do vylepšení.
       Každý server má svůj <em>vlastní</em> meloun — jeho stav se mění každou minutu podle počasí, vláhy a zdraví.
+      Vedle běžných melounů se v určitých dnech mohou ve výběru objevit i <em>speciální eventové plodiny</em>.
     </p>
   </div>
 
@@ -836,25 +919,103 @@
     <div class="card px-border">
       <div class="card-title">⚙️ ZÁKLADNÍ SMYČKA HRY</div>
       <ul>
-        <li>🗳️ Server hlasuje o druhu melounu</li>
-        <li>💧 Hráči zalévají meloun (tlačítko)</li>
-        <li>🌱 Meloun roste každou minutu</li>
+        <li>🗳️ Server hlasuje o druhu melounu / plodiny</li>
+        <li>💧 Hráči zalévají meloun (tlačítko v embed zprávě)</li>
+        <li>🌱 Meloun roste každou minutu automaticky</li>
         <li>🛡️ Bráníte před škůdci a plevelem</li>
-        <li>🍉 Sklizení = odměna mincemi a XP</li>
-        <li>📈 Investujte do vylepšení a opakujte</li>
+        <li>🍉 Sklizeň = odměna mincemi a XP</li>
+        <li>📋 Plň týdenní questy a získávej <em class="gem-color">💎 gemy</em></li>
+        <li>📈 Investuj zpět do vylepšení a opakuj</li>
       </ul>
     </div>
     <div class="card px-border">
       <div class="card-title">📊 KLÍČOVÉ MECHANIKY</div>
       <ul>
-        <li>⏱️ Zalévání má <em>cooldown</em> (3–15 min)</li>
+        <li>⏱️ Zalévání má <em>cooldown</em> (3–15 min podle růstu)</li>
         <li>🌤️ Počasí se mění náhodně — 4 různé typy</li>
-        <li>💀 Meloun může zemřít bez péče</li>
-        <li>⚖️ Váha melounu = bonus k odměně</li>
-        <li>🟪 Šance na hranatý meloun!</li>
-        <li>🏆 Žebříček hráčů dle investic</li>
+        <li>💀 Meloun může zemřít bez péče (HP systém)</li>
+        <li>⚖️ Váha melounu určuje výši odměny při sklizni</li>
+        <li>🟪 Šance na hranatý meloun (baby / vodní)!</li>
+        <li>💎 Prémová měna — gemy za splnění questů</li>
+        <li>✨ Eventové plodiny v určité dny</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- ======= PŘÍKAZY ======= -->
+<section id="prikazy">
+  <h2 class="section-title">📟 Přehled příkazů</h2>
+
+  <p style="font-family:var(--mono); font-size:18px; color:var(--muted); margin-bottom:24px;">
+    Všechny herní příkazy jsou pod skupinou <em>/melon</em>. Administrátorské příkazy jsou dostupné jen správcům serveru.
+  </p>
+
+  <div class="cmd-grid">
+
+    <div class="cmd-card px-border">
+      <div>
+        <div class="cmd-name">/melon profile [hráč]</div>
+        <div class="cmd-desc">Zobrazí herní profil — mince, gemy, XP, level, statistiky aktivity a přehled nasbíraných plodin. Přepínač lokální / globální statistiky v embed zprávě.</div>
+        <div class="cmd-args">Argument <em>hráč</em> je volitelný — bez něj zobrazí tvůj vlastní profil.</div>
+      </div>
+      <span class="perm-badge perm-user">👤 Všichni</span>
+    </div>
+
+    <div class="cmd-card px-border">
+      <div>
+        <div class="cmd-name">/melon quests</div>
+        <div class="cmd-desc">Zobrazí tvoje aktuální <em>týdenní questy</em> a progres jejich plnění. Odměna za splnění všech tří je <em class="gem-color">2 💎</em>. Questy se resetují každé pondělí 00:00.</div>
+      </div>
+      <span class="perm-badge perm-user">👤 Všichni</span>
+    </div>
+
+    <div class="cmd-card px-border">
+      <div>
+        <div class="cmd-name">/melon notification_settings</div>
+        <div class="cmd-desc">Osobní nastavení — zvol, které ephemeral notifikace od bota chceš dostávat (zalití, plevel, škůdci, level up). Nastavení se ukládá per-server.</div>
+      </div>
+      <span class="perm-badge perm-user">👤 Všichni</span>
+    </div>
+
+    <div class="cmd-card admin-cmd px-border">
+      <div>
+        <div class="cmd-name">/melon setup</div>
+        <div class="cmd-desc">Vytvoří embed zprávu melounu v aktuálním kanálu a spustí hlasování o výběru plodiny. Pokud meloun na serveru již existuje, bot se zeptá na potvrzení — původní zpráva bude smazána.</div>
+      </div>
+      <span class="perm-badge perm-admin">🔒 Admin</span>
+    </div>
+
+    <div class="cmd-card admin-cmd px-border">
+      <div>
+        <div class="cmd-name">/melon notifier &lt;přidat / odstranit&gt;</div>
+        <div class="cmd-desc">Nastaví nebo odstraní <em>notifikátor sklizně</em> pro server. Po aktivaci bot pošle zprávu do zvoleného kanálu, jakmile meloun dosáhne ~97,5 % růstu. Volitelně pinguje roli — s podporou silent pinku a tichých hodin.</div>
+      </div>
+      <span class="perm-badge perm-admin">🔒 Admin</span>
+    </div>
+
+    <div class="cmd-card admin-cmd px-border">
+      <div>
+        <div class="cmd-name">/melon manual_refresh &lt;message_id&gt;</div>
+        <div class="cmd-desc">Ručně obnoví embed zprávu melounu — hodí se při výpadku bota nebo zaseknuté embed zprávě. Vyžaduje ID zprávy z aktuálního serveru.</div>
+      </div>
+      <span class="perm-badge perm-admin">🔒 Admin</span>
+    </div>
+
+    <div class="cmd-card dev-cmd px-border">
+      <div>
+        <div class="cmd-name">/melon set</div>
+        <div class="cmd-desc">Vývojářský příkaz pro přímé nastavení parametrů melounu — vláha, HP, růst, váha, počasí, typ plodiny, slimáci, plevel a více. Dostupné pouze pro správce bota.</div>
+      </div>
+      <span class="perm-badge perm-dev">⛔ Dev</span>
+    </div>
+
+  </div>
+
+  <div class="tip-box">
+    <span class="tip-label">💡 TIPY</span>
+    Příkaz <em>/melon profile</em> funguje i na cizí hráče — zmínění uživatele zobrazí jejich stats.
+    Notifikátor se hodí pro aktivní servery, kde hráči nechtějí propásnout sklizeň.
   </div>
 </section>
 
@@ -864,34 +1025,38 @@
 
   <div class="steps">
     <div class="step">
-      <div class="step-title">HLASOVÁNÍ O MELOUNU</div>
-      <p>Na začátku každého kola server hlasuje o druhu melounu. Zvol moudře — každý druh má jinou obtížnost, rychlost růstu a výnosnost.</p>
+      <div class="step-title">HLASOVÁNÍ O PLODINĚ</div>
+      <p>Na začátku každého kola server hlasuje o druhu plodiny. Zvol moudře — každý druh má jinou obtížnost, rychlost růstu a výnosnost. V určité dny se ve výběru mohou objevit <em>speciální eventové plodiny</em>.</p>
     </div>
     <div class="step">
       <div class="step-title">ZALÉVÁNÍ</div>
-      <p>Klikni na tlačítko 💧 v embed zprávě. Zalití plní <em>vláhu</em> (vlhkost půdy). Bez dostatku vláhy meloun roste pomaleji nebo začne umírat. Zalévání má cooldown, který roste s velikostí melounu.</p>
+      <p>Klikni na tlačítko 💧 v embed zprávě. Zalití plní <em>vláhu</em> (vlhkost půdy). Bez dostatku vláhy meloun roste pomaleji nebo začne umírat. Zalévání má cooldown, který roste s velikostí melounu (3–15 min). Vylepšení konve zvyšuje množství vláhy na jedno zalití.</p>
     </div>
     <div class="step">
       <div class="step-title">HLÍDÁNÍ ŠKŮDCŮ A PLEVELE</div>
-      <p>Slimáci 🐌 snižují HP melounu — klikej na ně co nejrychleji! Plevel 🌿 zpomaluje růst. Při zakořenění (po 5 minutách) způsobuje postih 30 %.</p>
+      <p>Slimáci 🐌 snižují HP melounu — klikej na ně co nejrychleji! Každý klik = 1 💰 + 1 XP. Plevel 🌿 zpomaluje růst. Při zakořenění (po 5 minutách) způsobuje postih −30 % váhového multiplikátoru. Každý klik při vytrhávání = 2 💰 + 2 XP.</p>
     </div>
     <div class="step">
       <div class="step-title">SLEDOVÁNÍ STAVU</div>
-      <p>Embed zpráva se automaticky aktualizuje každou minutu. Ukazuje růst, vláhu, váhu, HP, počasí a zbývající čas do dalšího zalití.</p>
+      <p>Embed zpráva se automaticky aktualizuje každou minutu. Ukazuje růst, vláhu, váhu, HP, počasí, zbývající čas do dalšího zalití a aktivní perky. Embed mění barvu podle stavu — zelená = OK, oranžová = nízká vláha, červená = slimáci, tmavá = mrtvý meloun.</p>
     </div>
     <div class="step">
       <div class="step-title">SKLIZEŇ</div>
-      <p>Jakmile meloun dosáhne 100 %, spustí se sklizecí minihra. Klikej na 🍉 tlačítka co nejrychleji — 8 sekund! Odměna závisí na váze melounu a počtu kliknutí.</p>
+      <p>Jakmile meloun dosáhne 100 %, spustí se sklizecí minihra. Klikej na 🍉 tlačítka co nejrychleji — minihra trvá 8 sekund! Odměna závisí na váze melounu a počtu kliknutí.</p>
     </div>
     <div class="step">
       <div class="step-title">VYLEPŠENÍ A PERKY</div>
-      <p>Investuj vydělané mince do vylepšení konve, substrátu nebo lapače slimáků. Nakupuj jednorázové perky (doplnění vláhy, slunečné počasí…) pro těžší situace.</p>
+      <p>Investuj vydělané mince do serverových vylepšení (konev, substrát, lapač slimáků). Nakupuj jednorázové perky za mince nebo <em class="gem-color">💎 gemy</em> pro těžší situace.</p>
+    </div>
+    <div class="step">
+      <div class="step-title">TÝDENNÍ QUESTY A GEMY</div>
+      <p>Každý týden dostaneš 3 náhodné questy — za splnění všech tří získáš <em class="gem-color">2 💎 gemy</em>. Gemy lze použít jako alternativní platbu za perky místo mincí. Progres questů a odměny si kontroluj přes <em>/melon quests</em>.</p>
     </div>
   </div>
 
   <div class="tip-box">
     <span class="tip-label">💡 TIP PRO ZAČÁTEČNÍKY</span>
-    Začni s melounem <em>Baby vodní</em> — roste rychle, pije málo a zvládne i občasné zanedbání. Teprve až budeš mít vylepšení na úrovni 20+, zkus náročnější druhy.
+    Začni s melounem <em>Baby vodní</em> — roste rychle, pije málo a zvládne i občasné zanedbání. Teprve až budeš mít vylepšení na úrovni 20+, zkus náročnější druhy. Zalévej pravidelně — harvest bonus závisí na tvé aktivitě!
   </div>
 </section>
 
@@ -935,7 +1100,7 @@
         <div class="stage-row">
           <span class="stage-pct">100 %</span>
           <span class="stage-emoji">✨</span>
-          <span class="stage-name">Zralý meloun — čas na sklizeň!</span>
+          <span class="stage-name">Zralý plod — čas na sklizeň!</span>
         </div>
       </div>
     </div>
@@ -945,25 +1110,25 @@
         <p>Vláha ovlivňuje jak rychle meloun nabývá na váze. Čím vyšší vláha, tím větší meloun sklidíš.</p>
         <br>
         <div class="progress-container">
-          <div class="progress-label"><span>Vláha velmi vysoká</span><span class="good">Výborný růst váhy</span></div>
+          <div class="progress-label"><span>Vláha velmi vysoká (90 %+)</span><span class="good">Výborný růst váhy</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
         </div>
         <div class="progress-container">
-          <div class="progress-label"><span>Vláha dostatečná</span><span class="good">Slušný růst váhy</span></div>
+          <div class="progress-label"><span>Vláha dostatečná (60–90 %)</span><span class="good">Slušný růst váhy</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div>
         </div>
         <div class="progress-container">
-          <div class="progress-label"><span>Vláha nízká</span><span class="warn">Omezený růst váhy</span></div>
+          <div class="progress-label"><span>Vláha nízká (30–60 %)</span><span class="warn">Omezený růst váhy</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:40%; background: linear-gradient(90deg, #ca8a04, #fde047);"></div></div>
         </div>
         <div class="progress-container">
-          <div class="progress-label"><span>Vláha kritická</span><span class="bad">Váha téměř neroste</span></div>
+          <div class="progress-label"><span>Vláha kritická (pod 30 %)</span><span class="bad">Váha téměř neroste</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:15%; background: linear-gradient(90deg, #991b1b, #f87171);"></div></div>
         </div>
       </div>
       <div class="tip-box warn">
         <span class="tip-label">⚠️ POZOR</span>
-        Bouřka <em>zastavuje veškerý růst</em> a může způsobit ztrátu 2–10 % růstu. Plevel při zakořenění způsobuje postih 30 % váhového multiplikátoru!
+        Bouřka <em>zastavuje veškerý růst</em> a může způsobit ztrátu 2–10 % růstu. Plevel při zakořenění způsobuje postih 30 % váhového multiplikátoru! Přezrálý meloun (nad 100 %) začne ztrácet váhu −0.02 kg/min.
       </div>
     </div>
   </div>
@@ -971,7 +1136,7 @@
 
 <!-- ======= MELOUNY ======= -->
 <section id="melouny">
-  <h2 class="section-title">🍈 Druhy melounů</h2>
+  <h2 class="section-title">🍈 Standardní plodiny</h2>
 
   <div class="grid-2">
 
@@ -982,38 +1147,14 @@
       <span class="melon-difficulty diff-mala">Malá obtížnost</span>
       <p class="melon-desc">Ideální volba pro začátečníky. Roste rychle a nevyžaduje příliš péče. Výdělek je menší, ale spolehlivý.</p>
       <div class="melon-stats">
-        <div class="stat">
-          <span class="stat-label">RYCHLOST RŮSTU</span>
-          <span class="stat-value good">⚡ rychlá</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">SPOTŘEBA VLÁHY</span>
-          <span class="stat-value good">💧 nízká</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MINCE ZA KLIK</span>
-          <span class="stat-value coin">3 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">XP ZA KLIK</span>
-          <span class="stat-value xp">2 ✨</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MIN. VÁHA</span>
-          <span class="stat-value">~1.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MAX. VÁHA</span>
-          <span class="stat-value">~3.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">DÉLKA (HOD.)</span>
-          <span class="stat-value">1–2 h</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">HRANATÝ MELOUN</span>
-          <span class="stat-value good">10 % šance</span>
-        </div>
+        <div class="stat"><span class="stat-label">RYCHLOST RŮSTU</span><span class="stat-value good">⚡ rychlá</span></div>
+        <div class="stat"><span class="stat-label">SPOTŘEBA VLÁHY</span><span class="stat-value good">💧 nízká</span></div>
+        <div class="stat"><span class="stat-label">MINCE ZA KLIK</span><span class="stat-value coin">3 💰</span></div>
+        <div class="stat"><span class="stat-label">XP ZA KLIK</span><span class="stat-value xp">2 ✨</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MIN. VÁHA</span><span class="stat-value">~1.0 kg</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MAX. VÁHA</span><span class="stat-value">~3.0 kg</span></div>
+        <div class="stat"><span class="stat-label">DÉLKA (HOD.)</span><span class="stat-value">1–2 h</span></div>
+        <div class="stat"><span class="stat-label">HRANATÝ MELOUN</span><span class="stat-value good">10 % šance</span></div>
       </div>
     </div>
 
@@ -1024,38 +1165,14 @@
       <span class="melon-difficulty diff-stredni">Střední obtížnost</span>
       <p class="melon-desc">Klasický vodní meloun. Vyvážená náročnost a slušný výdělek. Dobrá volba pro zkušenější hráče.</p>
       <div class="melon-stats">
-        <div class="stat">
-          <span class="stat-label">RYCHLOST RŮSTU</span>
-          <span class="stat-value warn">🌱 střední</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">SPOTŘEBA VLÁHY</span>
-          <span class="stat-value warn">💧 střední</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MINCE ZA KLIK</span>
-          <span class="stat-value coin">6 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">XP ZA KLIK</span>
-          <span class="stat-value xp">5 ✨</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MIN. VÁHA</span>
-          <span class="stat-value">~4.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MAX. VÁHA</span>
-          <span class="stat-value">~12.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">DÉLKA (HOD.)</span>
-          <span class="stat-value">2–3 h</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">HRANATÝ MELOUN</span>
-          <span class="stat-value warn">5 % šance</span>
-        </div>
+        <div class="stat"><span class="stat-label">RYCHLOST RŮSTU</span><span class="stat-value warn">🌱 střední</span></div>
+        <div class="stat"><span class="stat-label">SPOTŘEBA VLÁHY</span><span class="stat-value warn">💧 střední</span></div>
+        <div class="stat"><span class="stat-label">MINCE ZA KLIK</span><span class="stat-value coin">6 💰</span></div>
+        <div class="stat"><span class="stat-label">XP ZA KLIK</span><span class="stat-value xp">5 ✨</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MIN. VÁHA</span><span class="stat-value">~4.0 kg</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MAX. VÁHA</span><span class="stat-value">~12.0 kg</span></div>
+        <div class="stat"><span class="stat-label">DÉLKA (HOD.)</span><span class="stat-value">2–3 h</span></div>
+        <div class="stat"><span class="stat-label">HRANATÝ MELOUN</span><span class="stat-value warn">5 % šance</span></div>
       </div>
     </div>
 
@@ -1064,89 +1181,94 @@
       <span class="melon-emoji">🍈</span>
       <div class="melon-name">Meloun cukrový</div>
       <span class="melon-difficulty diff-vysoka">Vysoká obtížnost</span>
-      <p class="melon-desc">Střední náročnost. Menší váha, ale za to výnosnější než vodní meloun. Vyžaduje stabilní zásobování vláhou.</p>
+      <p class="melon-desc">Menší váha, ale výnosnější za klik než vodní meloun. Vyžaduje stabilní zásobování vláhou po celou dobu pěstování.</p>
       <div class="melon-stats">
-        <div class="stat">
-          <span class="stat-label">RYCHLOST RŮSTU</span>
-          <span class="stat-value warn">🌱 pomalý</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">SPOTŘEBA VLÁHY</span>
-          <span class="stat-value bad">💧 vysoká</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MINCE ZA KLIK</span>
-          <span class="stat-value coin">14 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">XP ZA KLIK</span>
-          <span class="stat-value xp">11 ✨</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MIN. VÁHA</span>
-          <span class="stat-value">~1.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MAX. VÁHA</span>
-          <span class="stat-value">~3.5 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">DÉLKA (HOD.)</span>
-          <span class="stat-value">3–5 h</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">HRANATÝ MELOUN</span>
-          <span class="stat-value bad">0 % šance</span>
-        </div>
+        <div class="stat"><span class="stat-label">RYCHLOST RŮSTU</span><span class="stat-value warn">🌱 pomalý</span></div>
+        <div class="stat"><span class="stat-label">SPOTŘEBA VLÁHY</span><span class="stat-value bad">💧 vysoká</span></div>
+        <div class="stat"><span class="stat-label">MINCE ZA KLIK</span><span class="stat-value coin">14 💰</span></div>
+        <div class="stat"><span class="stat-label">XP ZA KLIK</span><span class="stat-value xp">11 ✨</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MIN. VÁHA</span><span class="stat-value">~1.0 kg</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MAX. VÁHA</span><span class="stat-value">~3.5 kg</span></div>
+        <div class="stat"><span class="stat-label">DÉLKA (HOD.)</span><span class="stat-value">3–5 h</span></div>
+        <div class="stat"><span class="stat-label">HRANATÝ MELOUN</span><span class="stat-value bad">0 % šance</span></div>
       </div>
     </div>
 
-    <!-- Zlatý -->
+    <!-- Žlutý -->
     <div class="melon-card px-border" style="--accent: #f87171;">
       <span class="melon-emoji">🌕</span>
-      <div class="melon-name">Meloun žlutý</div>
+      <div class="melon-name">Meloun žlutý (Golden Midget)</div>
       <span class="melon-difficulty diff-narocna">Náročná obtížnost</span>
-      <p class="melon-desc">Obrovská náročnost! Možné až s vysokými vylepšeními konve. Malé plody, velká spotřeba, velmi dlouhá doba. Odměna je ale výjimečná.</p>
+      <p class="melon-desc">Obrovská náročnost! Možné až s vysokými vylepšeními konve. Malé plody, velká spotřeba vláhy, velmi dlouhá doba. Odměna za klik je ale výjimečná.</p>
       <div class="melon-stats">
-        <div class="stat">
-          <span class="stat-label">RYCHLOST RŮSTU</span>
-          <span class="stat-value bad">🐢 velmi pomalý</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">SPOTŘEBA VLÁHY</span>
-          <span class="stat-value bad">💧 velmi vysoká</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MINCE ZA KLIK</span>
-          <span class="stat-value coin">20 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">XP ZA KLIK</span>
-          <span class="stat-value xp">15 ✨</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MIN. VÁHA</span>
-          <span class="stat-value">~2.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ODHAD. MAX. VÁHA</span>
-          <span class="stat-value">~5.0 kg</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">DÉLKA (HOD.)</span>
-          <span class="stat-value">5–7 h</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">HRANATÝ MELOUN</span>
-          <span class="stat-value bad">0 % šance</span>
-        </div>
+        <div class="stat"><span class="stat-label">RYCHLOST RŮSTU</span><span class="stat-value bad">🐢 velmi pomalý</span></div>
+        <div class="stat"><span class="stat-label">SPOTŘEBA VLÁHY</span><span class="stat-value bad">💧 velmi vysoká</span></div>
+        <div class="stat"><span class="stat-label">MINCE ZA KLIK</span><span class="stat-value coin">20 💰</span></div>
+        <div class="stat"><span class="stat-label">XP ZA KLIK</span><span class="stat-value xp">15 ✨</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MIN. VÁHA</span><span class="stat-value">~2.0 kg</span></div>
+        <div class="stat"><span class="stat-label">ODHAD. MAX. VÁHA</span><span class="stat-value">~5.0 kg</span></div>
+        <div class="stat"><span class="stat-label">DÉLKA (HOD.)</span><span class="stat-value">5–7 h</span></div>
+        <div class="stat"><span class="stat-label">HRANATÝ MELOUN</span><span class="stat-value bad">0 % šance</span></div>
       </div>
     </div>
+
   </div>
 
   <div class="tip-box warn">
     <span class="tip-label">🟪 HRANATÝ MELOUN</span>
-    Baby vodní meloun má 10% šanci, vodní 5% šanci na vypěstování hranatého melounu. Hranatý meloun sklidíš se speciální fialovou barvou embedu a bonusem k odměně!
+    Baby vodní meloun má 10% šanci, vodní 5% šanci na vypěstování hranatého melounu. Hranatý meloun sklidíš se speciální fialovou barvou embedu a textem „ČTVERCOVÝ MELOUN!"
+  </div>
+</section>
+
+<!-- ======= EVENT PLODINY ======= -->
+<section id="event-plodiny">
+  <h2 class="section-title">✨ Eventové plodiny</h2>
+
+  <div class="card px-border" style="margin-bottom:24px;">
+    <div class="card-title">🎉 CO JSOU EVENTOVÉ PLODINY?</div>
+    <p>
+      V určité dny se ve hlasování o výběru plodiny mohou objevit <em>speciální eventové plodiny</em> — místo nebo vedle běžných melounů.
+      Eventové plodiny mají unikátní vlastnosti, obrázky a různou obtížnost pěstování. Ve výběru jsou jasně označeny jako <em>✨ Eventová plodina</em>.
+      Nasbírané kusy eventových plodin jsou sledovány odděleně v tvém profilu jako speciální sklizeň.
+    </p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom: 24px;">
+
+    <!-- Mystery card -->
+    <div class="mystery-card">
+      <span class="melon-emoji" style="font-size:48px; display:block; margin-bottom:12px; opacity:0.5;">❓</span>
+      <div class="mystery-name">??? ??? ???</div>
+      <span class="melon-difficulty diff-event" style="margin-bottom:12px;">✨ Eventová plodina</span>
+      <p class="melon-desc" style="color: rgba(167,139,250,0.7);">Tato plodina se skrývá. Sledujte pečlivě každý výběr rostlin — nikdy nevíte, co se ve hlasování může objevit...</p>
+      <div class="melon-stats">
+        <div class="stat"><span class="stat-label">RYCHLOST RŮSTU</span><span class="stat-value great">??? </span></div>
+        <div class="stat"><span class="stat-label">SPOTŘEBA VLÁHY</span><span class="stat-value great">???</span></div>
+        <div class="stat"><span class="stat-label">MINCE ZA KLIK</span><span class="stat-value great">??? 💰</span></div>
+        <div class="stat"><span class="stat-label">XP ZA KLIK</span><span class="stat-value great">??? ✨</span></div>
+        <div class="stat"><span class="stat-label">ODHADOVANÁ VÁHA</span><span class="stat-value great">??? kg</span></div>
+        <div class="stat"><span class="stat-label">DÉLKA PĚSTOVÁNÍ</span><span class="stat-value great">??? h</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card px-border" style="margin-bottom:16px; border-left: 4px solid var(--gem2);">
+        <div class="card-title" style="color:var(--gem);">📋 JAK FUNGUJÍ EVENTOVÉ DNY</div>
+        <ul>
+          <li>✨ V určitých dnech se hlasování mění — nabídne jiné plodiny než obvykle</li>
+          <li>🗳️ Hlasování probíhá stejným způsobem jako vždy — tlačítky v embed zprávě</li>
+          <li>🎉 Eventový den je v hlasování jasně oznámen tematickou zprávou</li>
+          <li>📊 Nasbírané eventové plodiny se zobrazují odděleně ve tvém profilu</li>
+          <li>🌱 Každá plodina má vlastní sadu obrázků pro každou fázi a počasí</li>
+        </ul>
+      </div>
+
+      <div class="tip-box gem-tip">
+        <span class="tip-label">👀 SLEDUJ POZORNĚ</span>
+        Eventové plodiny mají různou obtížnost, dobu růstu i výnos — někdy může jít o jednodušší plodinu než meloun, jindy o extrémně náročnou výzvu. Sleduj výběr rostlin při každém hlasování!
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -1154,7 +1276,7 @@
 <section id="pocasi">
   <h2 class="section-title">☁️ Počasí</h2>
   <p style="font-family:var(--mono); font-size:18px; color:var(--muted); margin-bottom:24px;">
-    Počasí se mění <em>náhodně</em>. Existují 4 typy počasí — každý ovlivňuje rychlost růstu melounu, spotřebu vláhy a šanci na výskyt škůdců.
+    Počasí se mění <em>náhodně</em> každých ~30 minut. Existují 4 typy počasí — každý ovlivňuje rychlost růstu, spotřebu vláhy a šanci na výskyt škůdců.
   </p>
 
   <div class="weather-grid">
@@ -1162,91 +1284,44 @@
     <div class="weather-card px-border">
       <span class="weather-icon">☀️</span>
       <span class="weather-name">SLUNEČNO</span>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Šance</span>
-        <span class="good">Běžné</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Růst</span>
-        <span class="good">Zvýšený ⚡</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Spotř. vláhy</span>
-        <span class="good">Nízká 💧</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Škůdci</span>
-        <span class="warn">Malá 🐌</span>
-      </div>
+      <div class="weather-stat"><span class="weather-stat-key">Šance</span><span class="good">Časté</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Růst</span><span class="good">Zvýšený +20 % ⚡</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Spotř. vláhy</span><span class="good">Nízká 💧</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Škůdci</span><span class="warn">Malá šance 🐌</span></div>
     </div>
 
     <div class="weather-card px-border">
       <span class="weather-icon">⛅</span>
       <span class="weather-name">POLOJASNO</span>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Šance</span>
-        <span class="good">Nejčastější</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Růst</span>
-        <span class="good">Normální 📊</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Spotř. vláhy</span>
-        <span class="good">Velmi nízká 💧</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Škůdci</span>
-        <span class="warn">Střední 🐌</span>
-      </div>
+      <div class="weather-stat"><span class="weather-stat-key">Šance</span><span class="good">Nejčastější</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Růst</span><span class="good">Normální 📊</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Spotř. vláhy</span><span class="good">Velmi nízká 💧</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Škůdci</span><span class="warn">Střední šance 🐌</span></div>
     </div>
 
     <div class="weather-card px-border">
       <span class="weather-icon">🌧️</span>
       <span class="weather-name">DÉŠŤ</span>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Šance</span>
-        <span class="warn">Méně časté</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Růst</span>
-        <span class="warn">Snížený 📉</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Spotř. vláhy</span>
-        <span class="great">Minimální 💧</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Škůdci</span>
-        <span class="bad">Vysoká 🐌</span>
-      </div>
+      <div class="weather-stat"><span class="weather-stat-key">Šance</span><span class="warn">Méně časté</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Růst</span><span class="warn">Snížený −50 % 📉</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Spotř. vláhy</span><span class="great">Minimální 💧</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Škůdci</span><span class="bad">Vysoká šance 🐌</span></div>
     </div>
 
     <div class="weather-card px-border">
       <span class="weather-icon">⛈️</span>
       <span class="weather-name">BOUŘKA</span>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Šance</span>
-        <span class="bad">Vzácné</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Růst</span>
-        <span class="bad">Zastaven ☠️</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Spotř. vláhy</span>
-        <span class="great">Minimální 💧</span>
-      </div>
-      <div class="weather-stat">
-        <span class="weather-stat-key">Škůdci</span>
-        <span class="bad">Velmi vysoká 🐌</span>
-      </div>
+      <div class="weather-stat"><span class="weather-stat-key">Šance</span><span class="bad">Vzácné</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Růst</span><span class="bad">Zastaven ☠️</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Spotř. vláhy</span><span class="great">Minimální 💧</span></div>
+      <div class="weather-stat"><span class="weather-stat-key">Škůdci</span><span class="bad">Velmi vysoká 🐌</span></div>
     </div>
+
   </div>
 
   <div class="tip-box danger">
     <span class="tip-label">⛈️ BOUŘKA — SPECIÁLNÍ EFEKT</span>
-    Při bouřce <em>meloun vůbec neroste</em>. Navíc hrozí kroupy, které mohou vážně poškodit nebo zničit rostlinu! Trvá max. 15 minut, ale škůdci se v tuto dobu množí nejrychleji.
+    Při bouřce <em>meloun vůbec neroste</em>. Navíc hrozí kroupy — po skončení bouřky může růst klesnout o 2–10 % a meloun přijít o část váhy. Trvá max. 15 minut, ale škůdci se v tuto dobu množí nejrychleji. Perk <em>Slunečné počasí</em> nebo <em>Deštivé počasí</em> bouřku přeruší.
   </div>
 </section>
 
@@ -1258,7 +1333,7 @@
     <div>
       <div class="card px-border" style="margin-bottom:16px;">
         <div class="card-title">💚 HP SYSTÉM</div>
-        <p>Meloun má HP (zdravotní body). HP klesají při škůdcích, plevelu nebo nedostatku vláhy. Při 0 HP meloun umírá.</p>
+        <p>Meloun má HP (zdravotní body). HP klesají při útoku škůdců, plevelu nebo nedostatku vláhy. Embed zobrazuje HP jako barevné ikonky srdíček. Při 0 HP meloun umírá — musí se začít znovu.</p>
       </div>
       <div class="hp-grid">
         <div class="hp-card" style="border-left-color:#4ade80;">
@@ -1289,9 +1364,11 @@
         <ul>
           <li>🐌 <em>Škůdci (slimáci)</em> — klikej rychle, každý klik přináší 1 💰 a 1 XP. Pokud nejsou zlikvidováni, nepřetržitě snižují HP.</li>
           <br>
-          <li>🌿 <em>Plevel</em> — klikej na vytrhávání. Čerstvý plevel (do 5 min) nemá postih, zakořeněný způsobuje <em>-30 % váhový</em> multiplikátor.</li>
+          <li>🌿 <em>Plevel</em> — klikej na vytrhávání. Čerstvý plevel (do 5 min) nemá postih, zakořeněný způsobuje <em>−30 % váhového</em> multiplikátoru.</li>
           <br>
           <li>💀 <em>Kritický stav</em> — HP pod 19 a vláha pod 20 % = meloun brzy zemře! Nutná okamžitá záchrana.</li>
+          <br>
+          <li>⏱️ Embed ukazuje i <em>odhadovaný čas do smrti</em> pokud HP klesl a stále klesá.</li>
         </ul>
       </div>
       <div class="tip-box">
@@ -1304,9 +1381,9 @@
 
 <!-- ======= VYLEPŠENÍ ======= -->
 <section id="vylepseni">
-  <h2 class="section-title">⬆️ Vylepšení</h2>
+  <h2 class="section-title">⬆️ Serverová vylepšení</h2>
   <p style="font-family:var(--mono); font-size:18px; color:var(--muted); margin-bottom:24px;">
-    Investuj mince do trvalých vylepšení. Cena každé úrovně se exponenciálně zvyšuje.
+    Investuj mince do trvalých serverových vylepšení. Do vylepšení může přispět <em>jakýkoliv hráč</em> ze svých mincí — výsledek platí pro celý server. Cena každé úrovně exponenciálně roste.
   </p>
 
   <div class="grid-3">
@@ -1314,84 +1391,44 @@
     <div class="upgrade-card px-border">
       <span class="upgrade-icon">🚿</span>
       <div class="upgrade-name">KONEV</div>
-      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Zvyšuje objem jednoho zalití — s vyšší úrovní přidáš více vláhy jedním kliknutím.</p>
+      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Zvyšuje objem jednoho zalití — s vyšší úrovní přidáš více vláhy jedním kliknutím. Ovlivňuje také cenu perkU <em>Doplnění vláhy</em>.</p>
       <div class="melon-stats" style="margin-top:12px;">
-        <div class="stat">
-          <span class="stat-label">MAX LEVEL</span>
-          <span class="stat-value">200</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MAX BONUS</span>
-          <span class="stat-value good">+100 % vláhy</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ZÁKLAD. CENA</span>
-          <span class="stat-value coin">100 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">CENA ROSTE</span>
-          <span class="stat-value">exponenciálně</span>
-        </div>
+        <div class="stat"><span class="stat-label">MAX LEVEL</span><span class="stat-value">200</span></div>
+        <div class="stat"><span class="stat-label">MAX BONUS</span><span class="stat-value good">+100 % vláhy</span></div>
+        <div class="stat"><span class="stat-label">ZÁKLAD. CENA</span><span class="stat-value coin">100 💰</span></div>
+        <div class="stat"><span class="stat-label">CENA ROSTE</span><span class="stat-value">exponenciálně</span></div>
       </div>
     </div>
 
     <div class="upgrade-card px-border">
       <span class="upgrade-icon">🌱</span>
       <div class="upgrade-name">SUBSTRÁT</div>
-      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Zlepšuje kvalitu půdy — zvyšuje rychlost růstu melounu i výslednou váhu při sklizni. Těžší meloun = větší odměna.</p>
+      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Zlepšuje kvalitu půdy — zvyšuje rychlost růstu (do lvl 200) a výslednou váhu (od lvl 100). Těžší meloun = větší odměna.</p>
       <div class="melon-stats" style="margin-top:12px;">
-        <div class="stat">
-          <span class="stat-label">MAX LEVEL</span>
-          <span class="stat-value">20 000</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MAX BONUS (VÁHA)</span>
-          <span class="stat-value good">+0.1 % / level</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MAX BONUS (RŮST)</span>
-          <span class="stat-value good">+15 % rychlosti</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ZÁKLAD. CENA</span>
-          <span class="stat-value coin">100 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">CENA ROSTE</span>
-          <span class="stat-value">exponenciálně</span>
-        </div>
+        <div class="stat"><span class="stat-label">MAX LEVEL</span><span class="stat-value">∞ (20 000 base)</span></div>
+        <div class="stat"><span class="stat-label">BONUS RYCHLOST</span><span class="stat-value good">+15 % (do lvl 200)</span></div>
+        <div class="stat"><span class="stat-label">BONUS VÁHA</span><span class="stat-value good">od lvl 100+</span></div>
+        <div class="stat"><span class="stat-label">ZÁKLAD. CENA</span><span class="stat-value coin">100 💰</span></div>
       </div>
     </div>
 
     <div class="upgrade-card px-border">
-      <span class="upgrade-icon">📦</span>
+      <span class="upgrade-icon">🪤</span>
       <div class="upgrade-name">LAPAČ SLIMÁKŮ</div>
-      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Snižuje pravděpodobnost výskytu škůdců. Klíčové při dešti a bouřce.</p>
+      <p style="font-size:16px; color:var(--muted); margin-bottom:8px;">Snižuje pravděpodobnost výskytu škůdců. Klíčové při dešti a bouřce. Ovlivňuje také cenu perků počasí.</p>
       <div class="melon-stats" style="margin-top:12px;">
-        <div class="stat">
-          <span class="stat-label">MAX LEVEL</span>
-          <span class="stat-value">300</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">MAX BONUS</span>
-          <span class="stat-value good">−30 % škůdci</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">ZÁKLAD. CENA</span>
-          <span class="stat-value coin">50 💰</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">CENA ROSTE</span>
-          <span class="stat-value">exponenciálně</span>
-        </div>
+        <div class="stat"><span class="stat-label">MAX LEVEL</span><span class="stat-value">300</span></div>
+        <div class="stat"><span class="stat-label">MAX BONUS</span><span class="stat-value good">−30 % škůdci</span></div>
+        <div class="stat"><span class="stat-label">ZÁKLAD. CENA</span><span class="stat-value coin">50 💰</span></div>
+        <div class="stat"><span class="stat-label">CENA ROSTE</span><span class="stat-value">exponenciálně</span></div>
       </div>
     </div>
+
   </div>
 
   <div class="tip-box">
     <span class="tip-label">💡 STRATEGIE INVESTOVÁNÍ</span>
-    Na začátku investuj primárně do <em>Konve</em> — výrazně usnadňuje udržení vláhy a zpřístupňuje dražší perky.
-    Substrát je long-game investice pro maximalizaci váhy a rychlosti růstu melounu.
+    Na začátku investuj primárně do <em>Konve</em> — výrazně usnadňuje udržení vláhy a zpřístupňuje dražší perky. Substrát je long-game investice pro maximalizaci váhy a rychlosti. Investice se počítají do tvého profilu jako <em>celková investice</em>.
   </div>
 </section>
 
@@ -1399,17 +1436,18 @@
 <section id="perky">
   <h2 class="section-title">⚡ Perky</h2>
   <p style="font-family:var(--mono); font-size:18px; color:var(--muted); margin-bottom:24px;">
-    Jednorázové výhody, které si hráč může koupit za mince. Cena perku roste s úrovní vylepšení serveru.
+    Jednorázové výhody, které si každý hráč může koupit za <em>mince 💰</em> nebo <em class="gem-color">gemy 💎</em>. Cena v mincích roste s úrovní vylepšení serveru. Cena v gemech je vždy pevná.
   </p>
 
   <div class="grid-2">
 
     <div class="perk-card px-border">
-      <span class="perk-icon">💧</span>
+      <span class="perk-icon">🌊</span>
       <div class="perk-body">
         <div class="perk-name">DOPLNĚNÍ VLÁHY</div>
-        <span class="perk-cost">Základ: 60 💰 (roste s úrovní konve)</span>
-        <p class="perk-desc">Okamžitě doplní vláhu na maximum — bez nutnosti čekat na cooldown zalívání. Neocenitelné při suchu nebo plné vytíženosti hráčů.</p>
+        <span class="perk-cost">Základ: 60 💰 (roste s úrovní Konve)</span>
+        <span class="perk-gem-cost">Alternativa: 2 💎</span>
+        <p class="perk-desc">Okamžitě doplní vláhu na 100 % (lze použít jen při vláze pod 60 %). Neocenitelné při suchu nebo noční absenci hráčů.</p>
       </div>
     </div>
 
@@ -1417,28 +1455,67 @@
       <span class="perk-icon">☀️</span>
       <div class="perk-body">
         <div class="perk-name">SLUNEČNÉ POČASÍ</div>
-        <span class="perk-cost">Základ: 90 💰 (roste s úrovní lapače slimáků)</span>
-        <p class="perk-desc">Vynutí počasí <em>Slunečno</em> na dalších 90 minut. Ideální při dešti nebo bouřce, kdy meloun neroste nebo je ohrožen škůdci.</p>
+        <span class="perk-cost">Základ: 90 💰 (roste s úrovní Lapače)</span>
+        <span class="perk-gem-cost">Alternativa: 1 💎</span>
+        <p class="perk-desc">Okamžitě změní počasí na <em>Slunečno</em> na dobu 90 minut. Ideální při dešti nebo bouřce pro obnovení růstu a snížení výskytu škůdců.</p>
       </div>
     </div>
 
     <div class="perk-card px-border">
-      <span class="perk-icon">🔄</span>
+      <span class="perk-icon">🌧️</span>
       <div class="perk-body">
-        <div class="perk-name">NEOMEZENÉ ZALÉVÁNÍ (BEZ ROTACE)</div>
+        <div class="perk-name">DEŠTIVÉ POČASÍ</div>
+        <span class="perk-cost">Základ: 90 💰 (roste s úrovní Lapače)</span>
+        <span class="perk-gem-cost">Alternativa: 1 💎</span>
+        <p class="perk-desc">Okamžitě změní počasí na <em>Déšť</em> na dobu 90 minut. Minimalizuje spotřebu vláhy — hodí se při nedostatku hráčů pro zalévání nebo přes noc.</p>
+      </div>
+    </div>
+
+    <div class="perk-card px-border">
+      <span class="perk-icon">👤</span>
+      <div class="perk-body">
+        <div class="perk-name">NEOMEZENÉ ZALÉVÁNÍ</div>
         <span class="perk-cost">Základ: 200 💰 (roste s průměrem všech vylepšení)</span>
-        <p class="perk-desc">Po dobu <em>60 minut</em> umožňuje zalévat bez omezení cooldownu. Zabrání rotaci melounu po sklizni — server si zachová aktuální typ melounu i pro další kolo bez nového hlasování.</p>
+        <span class="perk-gem-cost">Alternativa: 3 💎</span>
+        <p class="perk-desc">Po dobu <em>60 minut</em> umožňuje zalévat bez cooldownu a bez nutnosti střídat se s ostatními. Ideální pro noční session nebo při kriticky nízké vláze.</p>
       </div>
     </div>
 
     <div class="perk-card px-border">
-      <span class="perk-icon">🌿</span>
+      <span class="perk-icon">⚡</span>
       <div class="perk-body">
-        <div class="perk-name">HNOJIVO</div>
-        <span class="perk-cost">Základ: 100 💰 (roste s úrovní substrátu)</span>
-        <p class="perk-desc">Po dobu <em>60 minut</em> dočasně zvýší rychlost růstu a přírůstek váhy melounu. Nejlevnější perk, ale efektivní pro maximalizaci finální váhy.</p>
+        <div class="perk-name">HNOJIVO (POHNOJIT)</div>
+        <span class="perk-cost">Základ: 160 💰 (roste s úrovní Substrátu)</span>
+        <span class="perk-gem-cost">Alternativa: 2 💎</span>
+        <p class="perk-desc">Zvýší rychlost růstu i přírůstek váhy melounu o <em>20 %</em> na 60 minut. Efektivní pro maximalizaci finální váhy — ideálně použij co nejblíže sklizni.</p>
       </div>
     </div>
+
+    <div class="perk-card px-border">
+      <span class="perk-icon">⭐</span>
+      <div class="perk-body">
+        <div class="perk-name">XP BOOSTER</div>
+        <span class="perk-cost">Základ: 240 💰 (roste s průměrem všech vylepšení)</span>
+        <span class="perk-gem-cost">Alternativa: 3 💎</span>
+        <p class="perk-desc">Ztrojnásobí získané XP ze všech akcí (zalévání, slimáci, plevel) po dobu <em>4 hodin</em>. Neplatí na sklizeň. Skvělý pro rychlý postup v levelu.</p>
+      </div>
+    </div>
+
+    <div class="perk-card px-border">
+      <span class="perk-icon">🪙</span>
+      <div class="perk-body">
+        <div class="perk-name">COIN BOOSTER</div>
+        <span class="perk-cost">Základ: 340 💰 (roste s průměrem všech vylepšení)</span>
+        <span class="perk-gem-cost">Alternativa: 4 💎</span>
+        <p class="perk-desc">Ztrojnásobí získané mince ze všech akcí (zalévání, slimáci, plevel) po dobu <em>4 hodin</em>. Neplatí na sklizeň. Ideální kombinace s aktivní hrou.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tip-box gem-tip">
+    <span class="tip-label">💎 PERKY ZA GEMY</span>
+    Gemy jsou vzácnější měna — získáš je splněním týdenních questů. Jejich výhoda je <em>pevná cena</em> nezávislá na úrovni vylepšení. Ušetři gemy na situace, kdy jsou mince příliš drahé nebo kdy potřebuješ perk rychle.
   </div>
 </section>
 
@@ -1449,9 +1526,9 @@
   <div class="grid-2">
     <div>
       <div class="card px-border">
-        <div class="card-title">💰 ZDROJE PŘÍJMŮ</div>
+        <div class="card-title">💰 MINCE — ZDROJE PŘÍJMŮ</div>
         <ul>
-          <li>🍉 <em>Sklizeň</em> — hlavní zdroj, závisí na váze melounu a harvest bonusu hráče</li>
+          <li>🍉 <em>Sklizeň</em> — hlavní zdroj, závisí na váze melounu, počtu kliknutí a harvest bonusu</li>
           <li>🐌 <em>Škůdci</em> — 1 💰 + 1 XP za každý klik při hubení slimáků</li>
           <li>🌿 <em>Plevel</em> — 2 💰 + 2 XP za každý klik při vytrhávání</li>
           <li>💧 <em>Zalévání</em> — 4 💰 odměna za úspěšné zalití melounu</li>
@@ -1460,52 +1537,186 @@
     </div>
 
     <div>
-      <div class="card px-border">
-        <div class="card-title">🏆 HARVEST BONUS</div>
-        <p style="font-size:17px; color:var(--text); margin-bottom:14px;">
-          Harvest bonus je <em>individuální bonus každého hráče</em> při sklizni. Závisí na tom, jak aktivně se hráč zapojoval do pěstování — zalévání, hubení slimáků a vytrhávání plevele. Čím aktivnější jsi byl, tím vyšší bonus dostaneš při sklizni.
-        </p>
+      <div class="gem-section px-border" style="margin-bottom:0;">
+        <div class="gem-title">💎 GEMY — PRÉMOVÁ MĚNA</div>
+        <ul style="font-family:var(--mono); font-size:17px; color:var(--text); line-height:1.7; padding-left:20px;">
+          <li>📋 <em class="gem-color">Týdenní questy</em> — splň všechny 3 a získej 2 💎</li>
+          <li>💎 Gemy jsou alternativní platbou za všechny perky</li>
+          <li>🔒 Cena v gemech je vždy <em class="gem-color">pevná</em> bez ohledu na úroveň vylepšení</li>
+          <li>📊 Aktuální počet gemů vidíš v <em>/melon profile</em></li>
+        </ul>
       </div>
     </div>
   </div>
 
   <div class="px-divider"></div>
 
+  <div class="grid-2">
+    <div class="card px-border">
+      <div class="card-title">🏆 HARVEST BONUS</div>
+      <p style="font-size:17px; color:var(--text); margin-bottom:14px;">
+        Harvest bonus je <em>individuální bonus každého hráče</em> při sklizni. Závisí na tom, jak aktivně se hráč zapojoval do pěstování — zalévání, hubení slimáků a vytrhávání plevele. Čím aktivnější jsi byl, tím vyšší bonus dostaneš při sklizni.
+      </p>
+    </div>
+
+    <div class="card px-border">
+      <div class="card-title">💎 GEM — PŘEHLED CEN PERKŮ</div>
+      <div class="stages-list" style="gap:2px;">
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">☀️ / 🌧️ Slunečno / Déšť</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">1 💎</span>
+        </div>
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">🌊 Doplnění vláhy</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">2 💎</span>
+        </div>
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">⭐ XP Booster</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">2 💎</span>
+        </div>
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">🪙 Coin Booster</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">2 💎</span>
+        </div>
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">👤 Neomezené zalévání</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">3 💎</span>
+        </div>
+        <div class="stage-row" style="grid-template-columns: 1fr auto;">
+          <span class="stage-name">⚡ Hnojivo</span>
+          <span class="gem-color" style="font-family:var(--mono); font-size:18px;">3 💎</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="tip-box">
     <span class="tip-label">🎯 STRATEGIE</span>
-    Zapojuj se do všech aktivit průběžně — zalévej, hub slimáky, vytrhávej plevel.
-    Čím vyšší je tvůj harvest bonus, tím víc mincí dostaneš při sklizni.
-    Investuj mince zpět do vylepšení a perků pro snazší péči o další meloun.
+    Zapojuj se do všech aktivit průběžně — zalévej, hub slimáky, vytrhávej plevel. Čím vyšší je tvůj harvest bonus, tím víc mincí dostaneš při sklizni. Plň týdenní questy pro <em class="gem-color">gemy</em> a investuj mince zpět do vylepšení pro snazší péči o další meloun.
   </div>
 </section>
 
-<!-- ======= OSTATNÍ ======= -->
+<!-- ======= QUESTY ======= -->
+<section id="questy">
+  <h2 class="section-title">📋 Týdenní questy</h2>
+
+  <div class="card px-border" style="margin-bottom:24px;">
+    <div class="card-title">📋 JAK QUESTY FUNGUJÍ</div>
+    <p>
+      Každý hráč dostane každý týden <em>3 náhodné questy</em>. Questy jsou unikátní pro každý server a resetují se každé <em>pondělí 00:00 (pražský čas)</em>.
+      Za splnění <em>všech tří</em> questů v daném týdnu získáš odměnu <em class="gem-color">2 💎 gemů</em>.
+      Progres a zbývající čas do resetu si zobrazíš přes <em>/melon quests</em>.
+    </p>
+  </div>
+
+  <div class="quest-grid">
+
+    <div class="quest-card px-border">
+      <span class="quest-emoji">🍉</span>
+      <div class="quest-name">SKLIZŇOVÉ QUESTY</div>
+      <p class="quest-desc">Nasbírej X ks při sklizni, účastni se sklizně konkrétního melounu nebo nasbírej X ks určitého druhu. Závisí na aktivitě při samotné minihře sklizně.</p>
+    </div>
+
+    <div class="quest-card px-border">
+      <span class="quest-emoji">🌱</span>
+      <div class="quest-name">PĚSTEBNÍ QUESTY</div>
+      <p class="quest-desc">Zalij rostlinu X-krát, pochytej X slimáků nebo vytrhej X ks plevele. Tyto questy motivují k pravidelné péči o meloun po celý týden.</p>
+    </div>
+
+    <div class="quest-card px-border">
+      <span class="quest-emoji">💰</span>
+      <div class="quest-name">EKONOMICKÉ QUESTY</div>
+      <p class="quest-desc">Vydělej X mincí, investuj X mincí do vylepšení nebo zakup jakýkoliv perk. Vhodné jako motivace k investování a aktivnímu využívání herní ekonomiky.</p>
+    </div>
+
+  </div>
+
+  <div class="card px-border" style="margin-bottom:16px;">
+    <div class="card-title">🎲 TYPY QUESTŮ — PŘEHLED</div>
+    <div class="stages-list" style="gap:3px;">
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🍉</span>
+        <span class="stage-name">Nasbírej X ks při sklizni</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">15–40 ks</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">💧</span>
+        <span class="stage-name">Zalij rostlinu X-krát</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">10–30×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🌿</span>
+        <span class="stage-name">Vytrhej X ks plevele</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">75–200 ks</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🐌</span>
+        <span class="stage-name">Pochytej X slimáků</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">100–250 ks</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🌱</span>
+        <span class="stage-name">Účastni se sklizně [plodiny]</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🍈</span>
+        <span class="stage-name">Nasbírej X ks [konkrétní plodiny]</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">3–20 ks</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">✨</span>
+        <span class="stage-name">Zakup jakýkoliv perk</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🪙</span>
+        <span class="stage-name">Investuj X 🪙 do vylepšení</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">200–500 🪙</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🪙</span>
+        <span class="stage-name">Vydělej X 🪙</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">100–500 🪙</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box gem-tip">
+    <span class="tip-label">💎 ODMĚNA ZA QUESTY</span>
+    Za splnění všech 3 questů v jednom týdnu dostaneš <em class="gem-color">2 💎 gemy</em>. Gemy jsou jediná možnost, jak je získat — nejde je koupit za mince. Každý hráč má questy unikátní pro každý server, takže progres na různých serverech je oddělený.
+  </div>
+</section>
+
+<!-- ======= PROFIL & LEVELOVÁNÍ ======= -->
 <section id="ostatni">
   <h2 class="section-title">👤 Profil & Levelování</h2>
 
   <div class="grid-2">
     <div class="card px-border">
-      <div class="card-title">👤 PŘÍKAZ /PROFILE</div>
-      <p style="margin-bottom:14px;">Zobrazí tvůj osobní profil hráče. Najdeš zde přehled všech svých statistik a pokroků.</p>
+      <div class="card-title">👤 PŘÍKAZ /MELON PROFILE</div>
+      <p style="margin-bottom:14px;">Zobrazí tvůj osobní profil hráče s přepínačem lokální / globální statistiky. Přes tlačítko v embed zprávě přepneš mezi statistikami ze serveru a ze všech serverů celkem.</p>
       <ul>
-        <li>💰 <em>Celkové mince</em> — kolik jsi celkově vydělal</li>
-        <li>💰 <em>Aktuální zůstatek</em> — kolik máš k dispozici</li>
-        <li>📈 <em>Celková investice</em> — kolik jsi investoval do vylepšení</li>
-        <li>✨ <em>XP a level</em> — tvůj aktuální level a postup</li>
+        <li>💰 <em>Mince</em> — aktuální zůstatek a celkové vydělané</li>
+        <li>💎 <em>Gemy</em> — aktuální počet prémiové měny</li>
+        <li>📈 <em>Celková investice</em> — kolik jsi vložil do vylepšení</li>
+        <li>✨ <em>XP a level</em> — tvůj aktuální level a postup v progress baru</li>
         <li>💧 <em>Počet zalití</em> — kolikrát jsi zalil meloun</li>
         <li>🐌 <em>Slimáci</em> — kolik škůdců jsi zlikvidoval</li>
         <li>🌿 <em>Plevel</em> — kolikrát jsi vytrhával plevel</li>
-        <li>🍉 <em>Sklizně</em> — počet sklizení a celková váha</li>
+        <li>🍉 <em>Sklizně</em> — počet účastí, nasbírané kusy a celková váha</li>
+        <li>🍈 <em>Přehled plodin</em> — kolik ks od každého standardního melounu</li>
+        <li>🎉 <em>Eventové plodiny</em> — celkem nasbírané speciální plodiny</li>
       </ul>
     </div>
 
     <div class="card px-border">
       <div class="card-title">📈 LEVELOVÁNÍ</div>
-      <p style="margin-bottom:14px;">XP získáváš za veškerou aktivitu v hře — zalévání, hubení škůdců, vytrhávání plevele i sklizeň. Level roste s každou aktivitou a odráží tvou celkovou zkušenost.</p>
+      <p style="margin-bottom:14px;">XP získáváš za veškerou aktivitu v hře. Level roste s každou aktivitou a odráží tvou celkovou zkušenost s péčí o meloun.</p>
       <div class="stages-list">
         <div class="stage-row" style="grid-template-columns: 1fr 80px;">
           <span class="stage-name">💧 Zalití melounu</span>
-          <span class="good" style="font-family:var(--mono); font-size:16px;">4 XP / zalití</span>
+          <span class="good" style="font-family:var(--mono); font-size:16px;">4 XP</span>
         </div>
         <div class="stage-row" style="grid-template-columns: 1fr 80px;">
           <span class="stage-name">🐌 Zlikvidování slimáka</span>
@@ -1517,12 +1728,12 @@
         </div>
         <div class="stage-row" style="grid-template-columns: 1fr 80px;">
           <span class="stage-name">🍉 Klikání při sklizni</span>
-          <span class="good" style="font-family:var(--mono); font-size:16px;">dle melounu</span>
+          <span class="good" style="font-family:var(--mono); font-size:16px;">dle plodiny</span>
         </div>
       </div>
       <div class="tip-box" style="margin-top:14px; margin-bottom:0;">
-        <span class="tip-label">💡 LEVELOVÁNÍ</span>
-        Křivka levelování je mírnější — důraz je na pravidelnou aktivitu, ne na grind. Každý level odráží skutečnou zkušenost hráče s péčí o meloun.
+        <span class="tip-label">⭐ XP BOOSTER</span>
+        Perk <em>XP Booster</em> ztrojnásobí XP ze zalévání, slimáků a plevele na 4 hodiny. Ideální kombinace s aktivní hrou pro rychlý postup v levelu!
       </div>
     </div>
   </div>
@@ -1540,7 +1751,7 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Meloun roste automaticky každou minutu. Rychlost růstu závisí na druhu melounu, aktuálním počasí a úrovni vláhy. Čím vyšší vláha, tím rychleji meloun přibývá na váze.
+        Meloun roste automaticky každou minutu. Rychlost růstu závisí na druhu plodiny, aktuálním počasí a úrovni substrátu. Vláha ovlivňuje přírůstek váhy — čím vyšší vláha, tím větší meloun nakonec sklidíš.
       </div>
     </div>
 
@@ -1550,7 +1761,7 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Doporučujeme před spaním doplnit vláhu na maximum pomocí perku <em>Doplnění vláhy</em>. Meloun tak poroste do doby, než mu začne docházet voda — není tak nutné ho zalévat. Náročnější melouny (žlutý, cukrový) se ale pro noční pěstování příliš nehodí. Druhá možnost je zakoupit perk <em>Neomezené zalévání</em> — pak můžeš zalévat celou noc sám bez dalších uživatelů.
+        Doporučujeme před spaním doplnit vláhu na maximum pomocí perku <em>Doplnění vláhy</em>. Meloun tak poroste do doby, než mu začne docházet voda. Druhá možnost je perk <em>Deštivé počasí</em> — za deště je spotřeba vláhy minimální. Třetí varianta je <em>Neomezené zalévání</em> — pak může jedna osoba zalévat celou noc sama.
       </div>
     </div>
 
@@ -1560,7 +1771,7 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Hranatý meloun je vzácná varianta, která se může objevit pouze u melounu vodního Baby (10% šance) nebo melounu vodního (5% šance). Nelze ho nijak vynutit — je to čistě náhoda. Poznáš ho podle fialové barvy embeddované zprávy při sklizni a textu „ČTVERCOVÝ MELOUN!".
+        Hranatý meloun je vzácná varianta, která se může objevit pouze u melounu vodního Baby (10% šance) nebo melounu vodního (5% šance). Nelze ho nijak vynutit — je to čistě náhoda. Poznáš ho podle fialové barvy embedu při sklizni a textu „ČTVERCOVÝ MELOUN!".
       </div>
     </div>
 
@@ -1570,17 +1781,37 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Udržuj vláhu co nejvýše po celou dobu pěstování — tím bude mít meloun při sklizni větší váhu a větší váha znamená větší odměnu. Aktivně se zapojuj do všech aktivit (zalévání, slimáci, plevel), protože to zvyšuje tvůj harvest bonus při sklizni. Získané mince investuj zpět do vylepšení, zejména do <em>konve</em> a <em>substrátu</em>.
+        Udržuj vláhu co nejvýše po celou dobu pěstování — tím bude meloun při sklizni těžší a odměna vyšší. Aktivně se zapojuj do všech aktivit (zalévání, slimáci, plevel) pro vyšší harvest bonus. Získané mince investuj do vylepšení, zejména do <em>konve</em>. V aktivní fázi hry použij perk <em>Coin Booster</em> pro trojnásobné zisky.
       </div>
     </div>
 
     <div class="faq-item px-border">
       <button class="faq-q" onclick="toggleFaq(this)">
-        <span>🎮 Co to jsou minihry a jak je hrát?</span>
+        <span>💎 Jak získat gemy?</span>
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Existují tři minihry — chytání slimáků, trhání plevele a sklízení melounu. Všechny je nutné spustit ručně. Chytání slimáků a trhání plevele trvá 8 sekund — klikej co nejrychleji na červená tlačítka. Sklizeň je možná až při dosažení 100 % růstu — zobrazí se tlačítka s ikonou 🍉 a máš opět 8 sekund. Čím více kliknutí, tím vyšší odměna.
+        Gemy získáš pouze splněním <em>všech tří týdenních questů</em>. Za kompletní sadu dostaneš 2 💎. Questy se resetují každé pondělí 00:00 pražského času. Gemy nelze koupit za mince — jde o prémovou měnu za pravidelné hraní.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>📋 Jak fungují týdenní questy?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Každý hráč dostane na začátku týdne 3 náhodné questy z různých kategorií (sklizeň, zalévání, slimáci, plevel, ekonomika…). Progres se aktualizuje automaticky při hře. Přes <em>/melon quests</em> vidíš aktuální questy, jejich progres a zbývající čas do resetu. Za splnění všech tří dostaneš 2 💎.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>✨ Co jsou eventové plodiny a kdy se objeví?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Eventové plodiny jsou speciální druhy plodin, které se ve výběru hlasování objeví jen v určité dny. Datum ani typ plodiny nejsou předem zveřejněny — sleduj každé hlasování. V hlasování jsou označeny jako „✨ Eventová plodina" a doplněny tematickou zprávou.
       </div>
     </div>
 
@@ -1590,7 +1821,17 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Po každé sklizni se hlasuje o tom, jaký druh melounu se bude pěstovat. Hlasování probíhá přes tlačítka přímo v embeddované zprávě. Vítězný meloun se automaticky na základě hlasování vybere a následně uvolní k zasazení.
+        Po každé sklizni se hlasuje o tom, jaký druh plodiny se bude pěstovat. Hlasování probíhá přes tlačítka přímo v embed zprávě a trvá 120 sekund. Vítězná plodina se automaticky vybere a spustí nové kolo. V eventové dny se ve výběru mohou objevit i speciální plodiny.
+      </div>
+    </div>
+
+    <div class="faq-item px-border">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span>🎮 Co to jsou minihry a jak je hrát?</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a">
+        Minihry probíhají formou klikání na barevná tlačítka v embed zprávě. Chytání slimáků a trhání plevele se spouští automaticky při výskytu škůdce/plevele — klikej na červená tlačítka co nejrychleji. Sklizeň je možná při 100 % růstu — zobrazí se 🍉 tlačítka a máš 8 sekund. Čím více kliknutí, tím vyšší odměna.
       </div>
     </div>
 
@@ -1664,12 +1905,10 @@
   function toggleFaq(btn) {
     const answer = btn.nextElementSibling;
     const isOpen = btn.classList.contains('open');
-    // close all
     document.querySelectorAll('.faq-q.open').forEach(b => {
       b.classList.remove('open');
       b.nextElementSibling.classList.remove('open');
     });
-    // open clicked if it was closed
     if (!isOpen) {
       btn.classList.add('open');
       answer.classList.add('open');

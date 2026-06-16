@@ -1,207 +1,4 @@
-import json
-import os
-from datetime import date
-
-def generate_index():
-    # 1. Kontrola souborů
-    if not os.path.exists('config.json'):
-        print("Error: config.json not found.")
-        return
-    
-    try:
-        with open('config.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"Error reading JSON: {e}")
-        return
-
-    # 1c. Příprava info.json (pokud neexistuje)
-    if not os.path.exists('info.json'):
-        with open('info.json', 'w', encoding='utf-8') as f:
-            json.dump({
-                "messages": [
-                    {"type": "info", "text": "Welcome to the Timetable System", "date": ""},
-                    {"type": "warning", "text": "Scheduled maintenance on 01. 03. 2026", "date": "01. 03. 2026"},
-                    {"type": "update", "text": "Timetables updated for March 2026", "date": "25. 02. 2026"}
-                ]
-            }, f, indent=4, ensure_ascii=False)
-
-    # 1d. Načtení novinek z novinky.txt (text se vloží přímo do HTML)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    novinky_path = os.path.join(script_dir, 'novinky.txt')
-    novinky_html = ""
-    if os.path.exists(novinky_path):
-        with open(novinky_path, 'r', encoding='utf-8') as f:
-            lines = [l.rstrip('\n') for l in f.readlines()]
-        while len(lines) < 3:
-            lines.append("")
-        titulek = lines[0].strip()
-        text    = lines[1].strip()
-        rezerva = lines[2].strip()
-        print(f"  Novinky nalezeny: {novinky_path}")
-        print(f"    Titulek : {titulek or '(prázdný)'}")
-        print(f"    Text    : {text or '(prázdný)'}")
-        print(f"    Rezerva : {rezerva or '(prázdný)'}")
-        if titulek or text:
-            rezerva_html = f'<div class="novinky-rezerva">{rezerva}</div>' if rezerva else ''
-            novinky_html = (
-                f'<div class="novinky-section">'
-                f'<div class="novinky-titulek">{titulek}</div>'
-                f'<div class="novinky-text">{text}</div>'
-                f'{rezerva_html}'
-                f'</div>'
-            )
-    else:
-        print(f"  novinky.txt nenalezen ({novinky_path}) – sekce vynechána.")
-
-    PRIORITY_OSOBNI = [["ECE", "ECJ", "ECS", "ECM"], ["ENE", "ENS"], ["EIE", "EIJ", "EIS", "EIM"], ["MME", "MMJ", "MMS", "MMM"], ["MPE", "MPJ", "MPS", "MPM"], ["MHE", "MHJ", "MHS"], ["MOE", "MOJ", "MOS", "MOM"], ["RMP", "RME", "RMJ", "RMS", "RMM"], ["RPP", "RPE", "RPJ", "RPS", "RPM"], ["ROP", "ROE", "ROJ", "ROS", "ROM"], ["RAE", "RAJ", "RAS", "RAM"], ["PWP", "PWE", "PWJ", "PWS", "PWM"], ["PXP", "PXE", "PXJ", "PXS", "PXM"]]
-    PRIORITY_NAKLADNI = [["TCE", "TCS"], ["TGE", "TGS"], ["TRE", "TRS"], ["TDE", "TDS"], ["TME", "TMS"], ["TNE", "TNS"], ["TKP", "TKE", "TKS"], ["TSE", "TSJ", "TSS", "TSM"], ["THE", "THS"], ["LPP", "LPE", "LPS"], ["LTP", "LTE", "LTS"], ["LZE", "LZS"], ["LSE", "LSS"], ["ZGE", "ZGJ", "ZGS", "ZGM"], ["ZNE", "ZNJ", "ZNS", "ZNM"], ["ZUE", "ZUS", "ZUM"], ["ZXE", "ZXS", "ZXM"]]
-    
-    styles = data.get("styles", {})
-    default_style = {"bg": "#333", "fg": "#FFFFFF"}
-    configs = data.get("timetables", data.get("vlaky", data if isinstance(data, list) else []))
-
-    # Flat sety pro rychlé vyhledávání
-    ALL_OSOBNI_CATS = {cat for group in PRIORITY_OSOBNI for cat in group}
-    ALL_NAKLADNI_CATS = {cat for group in PRIORITY_NAKLADNI for cat in group}
-
-    def get_primary_category(item):
-        """Vrátí první kategorii (i u 'MPE, MHE' vrátí 'MPE')."""
-        return item.get("category", "").split(',')[0].strip()
-
-    def get_sort_key(item):
-        """Číslo pro řazení uvnitř skupiny, odvozené z titulku."""
-        try:
-            raw_title = str(item.get('title', '0')).split('|')[0].strip()
-            first_num_part = raw_title.split('/')[0].strip()
-            val_str = first_num_part.replace('xx', '00')
-            clean_val = ''.join(filter(str.isdigit, val_str))
-            return int(clean_val) if clean_val else 0
-        except:
-            return 0
-
-    def is_osobni(item):
-        cat = get_primary_category(item)
-        return cat in ALL_OSOBNI_CATS
-
-    def is_nakladni(item):
-        cat = get_primary_category(item)
-        return cat in ALL_NAKLADNI_CATS
-
-    def build_train_numbers(item):
-        """Generuje seznam čísel vlaků z rozsahu start_no/end_no a směru odd/even."""
-        start = item.get('start_no')
-        end = item.get('end_no')
-        direction = item.get('direction', '').lower()
-        if start is None or end is None:
-            return ""
-        numbers = []
-        for n in range(int(start), int(end) + 1):
-            if direction == 'odd' and n % 2 != 0:
-                numbers.append(str(n))
-            elif direction == 'even' and n % 2 == 0:
-                numbers.append(str(n))
-            elif direction not in ('odd', 'even'):
-                numbers.append(str(n))
-        return " ".join(numbers)
-
-    def build_priority_list(train_list, priority_defs):
-        final_html = []
-        for group in priority_defs:
-            group_set = set(group)
-            # Zahrnout vlak, pokud JAKÁKOLIV jeho kategorie patří do skupiny
-            vlaky = []
-            for t in train_list:
-                cats = [c.strip() for c in t.get("category", "Vlak").split(',')]
-                if any(c in group_set for c in cats):
-                    vlaky.append(t)
-            if not vlaky: continue
-            vlaky.sort(key=get_sort_key)
-            # Zobrazit první kategorii jako badge (nebo tu, která patří do skupiny)
-            group_html = f'<div class="category-group"><div class="category-header"><span>{" • ".join(group)}</span></div>'
-            for t in vlaky:
-                cats = [c.strip() for c in t.get("category", "Vlak").split(',')]
-                original_cat = t.get("category", "Vlak").strip()
-                # Styl: zkus celý klíč ("ROE, ROJ"), pak jednotlivé kódy, pak DEFAULT
-                style = styles.get(original_cat)
-                if style is None:
-                    for c in cats:
-                        if c in styles:
-                            style = styles[c]
-                            break
-                if style is None:
-                    style = styles.get("DEFAULT", default_style)
-                # Badge: více kategorií = dva řádky, menší font
-                if len(cats) > 1:
-                    badge_html = f'<span class="cat-badge cat-badge--multi" style="background-color: {style.get("bg")}; color: {style.get("fg")};">{"<br>".join(cats)}</span>'
-                else:
-                    badge_html = f'<span class="cat-badge" style="background-color: {style.get("bg")}; color: {style.get("fg")};">{cats[0]}</span>'
-                train_numbers = build_train_numbers(t)
-                search_data = f"{' '.join(cats)} {t.get('title', '')} {train_numbers}"
-                # Rozdělit titulek na číslo a trasu podle " | "
-                raw_title = t.get("title", "Untitled")
-                if " | " in raw_title:
-                    train_num_part, train_route = raw_title.split(" | ", 1)
-                else:
-                    train_num_part = raw_title
-                    train_route = ""
-                group_html += (f'<a href="export/{t.get("output_file", "#")}" class="train-item" '
-                               f'data-search="{search_data}" data-numbers="{train_numbers}">'
-                               f'{badge_html}'
-                               f'<span class="train-num">{train_num_part.strip()}</span>'
-                               f'<span class="train-sep"></span>'
-                               f'<span class="train-route">{train_route.strip()}</span>'
-                               f'</a>')
-            group_html += '</div>'
-            final_html.append(group_html)
-        return "".join(final_html)
-
-    # ── TŘÍDĚNÍ VLAKŮ + LOGOVÁNÍ ────────────────────────────────────────────
-    SEP = "─" * 60
-
-    osobni_list   = []
-    nakladni_list = []
-    uncategorized = []
-
-    print(SEP)
-    print("  TŘÍDĚNÍ JÍZDNÍCH ŘÁDŮ")
-    print(SEP)
-
-    for c in configs:
-        title = c.get('title', c.get('output_file', '?'))
-        cat   = c.get('category', '?')
-        if is_osobni(c):
-            osobni_list.append(c)
-            print(f"  [OSOBNÍ ]  {title}  ({cat})")
-        elif is_nakladni(c):
-            nakladni_list.append(c)
-            print(f"  [NÁKLAD ]  {title}  ({cat})")
-        else:
-            uncategorized.append(c)
-            print(f"  [! CHYBÍ]  {title}  ({cat})  ← nenalezena vhodná kategorie!")
-
-    print(SEP)
-    print(f"  Zařazeno do OSOBNÍ:   {len(osobni_list)} jízdní řád(ů)")
-    print(f"  Zařazeno do NÁKLADNÍ: {len(nakladni_list)} jízdní řád(ů)")
-
-    if uncategorized:
-        print(f"  Chybějící zařazení:   {len(uncategorized)} jízdní řád(ů)")
-        print()
-        print("  Vlaky BEZ zařazení (nebudou zobrazeny v index.html):")
-        for u in uncategorized:
-            t = u.get('title', u.get('output_file', '?'))
-            cat = u.get('category', '?')
-            print(f"    • {t}  [kategorie: {cat}]")
-    else:
-        print("  Chybějící zařazení:   0  ✓ vše v pořádku")
-
-    print(SEP)
-
-    osobni_html  = build_priority_list(osobni_list,  PRIORITY_OSOBNI)
-    nakladni_html = build_priority_list(nakladni_list, PRIORITY_NAKLADNI)
-    today = date.today()
-
-    html = f"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -209,7 +6,7 @@ def generate_index():
     <title>Train Timetables</title>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {{
+        :root {
             --bg: #f0f2f5;
             --card-bg: #ffffff;
             --text: #1a1a2e;
@@ -227,8 +24,8 @@ def generate_index():
             --update-bg: #ecfdf5;
             --update-border: #10b981;
             --update-icon: #10b981;
-        }}
-        [data-theme="dark"] {{
+        }
+        [data-theme="dark"] {
             --bg: #0d1117;
             --card-bg: #161b22;
             --text: #e6edf3;
@@ -246,168 +43,168 @@ def generate_index():
             --update-bg: #0d2a1f;
             --update-border: #3fb950;
             --update-icon: #3fb950;
-        }}
-        * {{ font-family: 'Barlow Semi Condensed', sans-serif; box-sizing: border-box; }}
-        body {{ margin: 0; padding: 24px 20px; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.2s; }}
-        .container {{ max-width: 1260px; margin: 0 auto; }}
+        }
+        * { font-family: 'Barlow Semi Condensed', sans-serif; box-sizing: border-box; }
+        body { margin: 0; padding: 24px 20px; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.2s; }
+        .container { max-width: 1260px; margin: 0 auto; }
 
         /* TOP BAR */
-        .top-bar {{
+        .top-bar {
             display: flex; justify-content: center; align-items: center;
             margin-bottom: 28px; padding-bottom: 18px;
             border-bottom: 2px solid var(--border);
             position: relative;
-        }}
-        h1 {{
+        }
+        h1 {
             font-weight: 700; text-transform: uppercase; font-size: 38px; margin: 0;
             letter-spacing: 2px; color: var(--text); text-align: center;
-        }}
-        h1 span {{ color: var(--primary); }}
-        .controls {{ position: absolute; right: 0; }}
-        .controls {{ display: flex; gap: 10px; }}
-        .btn {{
+        }
+        h1 span { color: var(--primary); }
+        .controls { position: absolute; right: 0; }
+        .controls { display: flex; gap: 10px; }
+        .btn {
             background: var(--card-bg); border: 1px solid var(--border); color: var(--text);
             padding: 9px 18px; border-radius: 8px; cursor: pointer; font-weight: 600;
             font-size: 14px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
-        }}
-        .btn:hover {{ background: var(--primary-light); border-color: var(--primary); color: var(--primary); }}
+        }
+        .btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
 
         /* INFO PANEL */
-        #info-panel {{ margin-bottom: 24px; }}
-        #info-panel:empty {{ margin-bottom: 0; }}
-        .info-grid {{
+        #info-panel { margin-bottom: 24px; }
+        #info-panel:empty { margin-bottom: 0; }
+        .info-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 12px;
-        }}
-        .info-msg {{
+        }
+        .info-msg {
             display: flex; align-items: flex-start; gap: 14px;
             padding: 14px 18px; border-radius: 10px;
             border-left: 4px solid var(--info-border);
             background: var(--info-bg);
             transition: transform 0.2s;
-        }}
-        .info-msg:hover {{ transform: translateY(-2px); }}
-        .info-msg.warning {{ border-color: var(--warning-border); background: var(--warning-bg); }}
-        .info-msg.update {{ border-color: var(--update-border); background: var(--update-bg); }}
-        .info-msg-icon {{ font-size: 18px; flex-shrink: 0; margin-top: 1px; }}
-        .info-msg-body {{ flex: 1; min-width: 0; }}
-        .info-msg-text {{ font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }}
-        .info-msg-date {{ font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 400; }}
-        .info-panel-header {{
+        }
+        .info-msg:hover { transform: translateY(-2px); }
+        .info-msg.warning { border-color: var(--warning-border); background: var(--warning-bg); }
+        .info-msg.update { border-color: var(--update-border); background: var(--update-bg); }
+        .info-msg-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .info-msg-body { flex: 1; min-width: 0; }
+        .info-msg-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+        .info-msg-date { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 400; }
+        .info-panel-header {
             display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-        }}
-        .info-panel-title {{
+        }
+        .info-panel-title {
             font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
             color: var(--text-muted);
-        }}
-        .info-panel-line {{ flex: 1; height: 1px; background: var(--border); }}
+        }
+        .info-panel-line { flex: 1; height: 1px; background: var(--border); }
 
         /* SEARCH */
-        .search-section {{ margin-bottom: 32px; }}
-        .search-wrapper {{
+        .search-section { margin-bottom: 32px; }
+        .search-wrapper {
             position: relative; max-width: 700px; margin: 0 auto;
-        }}
-        .search-icon {{
+        }
+        .search-icon {
             position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
             font-size: 18px; pointer-events: none; color: var(--text-muted);
-        }}
-        #searchInput {{
+        }
+        #searchInput {
             width: 100%; padding: 16px 20px 16px 50px;
             border-radius: 12px; border: 2px solid var(--border);
             background: var(--card-bg); color: var(--text);
             font-size: 18px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
             box-shadow: 0 2px 8px var(--shadow);
-        }}
-        #searchInput:focus {{
+        }
+        #searchInput:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(29,111,164,0.12);
-        }}
-        .search-hint {{
+        }
+        .search-hint {
             text-align: center; margin-top: 10px; font-size: 13px; color: var(--text-muted);
-        }}
-        .search-hint code {{
+        }
+        .search-hint code {
             background: var(--border); padding: 1px 6px; border-radius: 4px; font-size: 12px;
-        }}
-        #search-result-count {{
+        }
+        #search-result-count {
             text-align: center; margin-top: 8px; font-size: 13px;
             color: var(--primary); font-weight: 600; min-height: 18px;
-        }}
+        }
 
         /* COLUMNS */
-        .columns {{ display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }}
-        .column {{
+        .columns { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+        .column {
             flex: 1; min-width: 360px; background: var(--card-bg);
             padding: 28px; border-radius: 14px; border: 1px solid var(--border);
             box-shadow: 0 2px 12px var(--shadow);
-        }}
-        h2 {{
+        }
+        h2 {
             text-align: center; color: var(--primary); font-weight: 700;
             text-transform: uppercase; font-size: 30px; margin: 0 0 28px 0;
             letter-spacing: 1.5px; display: flex; align-items: center;
             justify-content: center; gap: 10px;
-        }}
-        h2::before, h2::after {{
+        }
+        h2::before, h2::after {
             content: ''; flex: 1; height: 2px; background: var(--border);
-        }}
+        }
 
         /* CATEGORY GROUPS */
-        .category-header {{
+        .category-header {
             display: flex; align-items: center; margin: 22px 0 12px;
-        }}
-        .category-header::before, .category-header::after {{
+        }
+        .category-header::before, .category-header::after {
             content: ''; flex: 1; border-bottom: 1px solid var(--border);
-        }}
-        .category-header span {{
+        }
+        .category-header span {
             padding: 0 14px; font-size: 18px; font-weight: 700;
             color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;
-        }}
+        }
 
         /* TRAIN ITEMS */
-        .train-item {{
+        .train-item {
             display: flex; align-items: center; padding: 8px 12px;
             text-decoration: none; color: inherit;
             border-radius: 8px; margin-bottom: 2px;
             transition: background 0.15s, transform 0.15s;
             border: 1px solid transparent;
             gap: 0;
-        }}
-        .train-item:hover {{
+        }
+        .train-item:hover {
             background: var(--primary-light);
             border-color: var(--border);
             transform: translateX(4px);
-        }}
-        .cat-badge {{
+        }
+        .cat-badge {
             padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 15px;
             margin-right: 16px; min-width: 58px; text-align: center;
             display: inline-block; letter-spacing: 0.5px; flex-shrink: 0;
-        }}
-        .cat-badge--multi {{
+        }
+        .cat-badge--multi {
             font-size: 11px;
             letter-spacing: 0;
             line-height: 1.4;
             padding: 3px 8px;
-        }}
+        }
         /* Číselná část – fixní šířka aby trasy začínaly ve stejném sloupci.
            ch = šířka znaku "0" daného fontu; 421xx/422xx má 10 znaků → 12ch s rezervou */
-        .train-num {{
+        .train-num {
             font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
             width: 12ch; flex-shrink: 0; white-space: nowrap; overflow: hidden;
             text-overflow: ellipsis; color: var(--text);
-        }}
+        }
         /* Svislý oddělovač */
-        .train-sep {{
+        .train-sep {
             display: inline-block; width: 1px; height: 1.1em;
             background: var(--border); margin: 0 14px; flex-shrink: 0;
             align-self: center;
-        }}
+        }
         /* Trasa – roztáhne se do zbytku prostoru */
-        .train-route {{
+        .train-route {
             font-size: 15px; font-weight: 500; color: var(--text);
             flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }}
+        }
 
         /* NOVINKY */
-        .novinky-section {{
+        .novinky-section {
             text-align: center;
             margin-bottom: 24px;
             padding: 18px 28px;
@@ -415,51 +212,51 @@ def generate_index():
             border-radius: 12px;
             border: 1px solid var(--border);
             box-shadow: 0 2px 8px var(--shadow);
-        }}
-        .novinky-titulek {{
+        }
+        .novinky-titulek {
             font-size: 22px;
             font-weight: 700;
             color: var(--primary);
             letter-spacing: 1.5px;
             text-transform: uppercase;
             margin-bottom: 6px;
-        }}
-        .novinky-text {{
+        }
+        .novinky-text {
             font-size: 16px;
             color: var(--text);
             line-height: 1.5;
-        }}
-        .novinky-rezerva {{
+        }
+        .novinky-rezerva {
             font-size: 13px;
             color: var(--text-muted);
             margin-top: 5px;
-        }}
+        }
 
         /* MISC */
-        .hidden {{ display: none !important; }}
-        .no-results {{
+        .hidden { display: none !important; }
+        .no-results {
             text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 16px;
-        }}
+        }
 
         /* FOOTER */
-        .site-footer {{
+        .site-footer {
             margin-top: 40px; padding: 20px 0;
             border-top: 1px solid var(--border);
             text-align: center;
             font-size: 13px; color: var(--text-muted);
             letter-spacing: 0.5px;
-        }}
-        .site-footer a {{
+        }
+        .site-footer a {
             color: var(--primary); text-decoration: none; font-weight: 600;
-        }}
-        .site-footer a:hover {{ text-decoration: underline; }}
+        }
+        .site-footer a:hover { text-decoration: underline; }
 
-        @media (max-width: 900px) {{
-            .top-bar {{ flex-wrap: wrap; gap: 12px; }}
-            h1 {{ font-size: 28px; }}
-            .columns {{ flex-direction: column; }}
-            .column {{ min-width: unset; }}
-        }}
+        @media (max-width: 900px) {
+            .top-bar { flex-wrap: wrap; gap: 12px; }
+            h1 { font-size: 28px; }
+            .columns { flex-direction: column; }
+            .column { min-width: unset; }
+        }
     </style>
 </head>
 <body>
@@ -472,7 +269,7 @@ def generate_index():
         </div>
 
         <!-- NOVINKY (vloženo při generaci z novinky.txt) -->
-        {novinky_html}
+        <div class="novinky-section"><div class="novinky-titulek">📢 New timetables available! | 17.06.2026</div><div class="novinky-text">Browse new timetables and check out what's new with the latest in-game timetable update.</div><div class="novinky-rezerva">Note: Added Vmax as experimental information from API. Consists will be filled during week once I garther them.</div></div>
 
         <!-- INFO PANEL – načítá se z info.json -->
         <div id="info-panel"></div>
@@ -492,12 +289,12 @@ def generate_index():
         <div class="columns">
             <div class="column">
                 <h2>Passenger Trains</h2>
-                <div id="osobniList">{osobni_html}</div>
+                <div id="osobniList"><div class="category-group"><div class="category-header"><span>ECE • ECJ • ECS • ECM</span></div><a href="export/ECE_450xx.html" class="train-item" data-search="ECE 450xx | Katowice - Warszawa Wschodnia 45000 45002 45004 45006 45008 45010 45012 45014 45016 45018 45020 45022 45024 45026 45028 45030 45032 45034" data-numbers="45000 45002 45004 45006 45008 45010 45012 45014 45016 45018 45020 45022 45024 45026 45028 45030 45032 45034"><span class="cat-badge" style="background-color: #3AFFFB; color: #000000;">ECE</span><span class="train-num">450xx</span><span class="train-sep"></span><span class="train-route">Katowice - Warszawa Wschodnia</span></a><a href="export/ECE_540xx.html" class="train-item" data-search="ECE 540xx | Warszawa Wschodnia - Katowice 54001 54003 54005 54007 54009 54011 54013 54015 54017 54019 54021 54023 54025 54027 54029 54031 54033 54035" data-numbers="54001 54003 54005 54007 54009 54011 54013 54015 54017 54019 54021 54023 54025 54027 54029 54031 54033 54035"><span class="cat-badge" style="background-color: #3AFFFB; color: #000000;">ECE</span><span class="train-num">540xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a></div><div class="category-group"><div class="category-header"><span>EIE • EIJ • EIS • EIM</span></div><a href="export/EIJ_13xx.html" class="train-item" data-search="EIJ 13xx | Warszawa Wschodnia - Kraków Główny 1301 1303 1305 1307 1309 1311 1313 1315 1317 1319" data-numbers="1301 1303 1305 1307 1309 1311 1313 1315 1317 1319"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">13xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Kraków Główny</span></a><a href="export/EIJ_14xx.html" class="train-item" data-search="EIJ 14xx | Warszawa Wschodnia - Katowice 1401 1403 1405 1407 1409 1411 1413 1415 1417" data-numbers="1401 1403 1405 1407 1409 1411 1413 1415 1417"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">14xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a><a href="export/EIJ_16xx.html" class="train-item" data-search="EIJ 16xx | Warszawa Wschodnia - Żelisławice 1601 1603 1605 1607 1609 1611 1613 1615 1617 1619 1621 1623 1625 1627 1629 1631 1633 1635 1637 1639 1641 1643 1645 1647 1649 1651 1653 1655 1657 1659 1661 1663" data-numbers="1601 1603 1605 1607 1609 1611 1613 1615 1617 1619 1621 1623 1625 1627 1629 1631 1633 1635 1637 1639 1641 1643 1645 1647 1649 1651 1653 1655 1657 1659 1661 1663"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">16xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Żelisławice</span></a><a href="export/EIE_18xx.html" class="train-item" data-search="EIE 18xx | Warszawa Wschodnia - Warszawa Włochy 1801 1803 1805 1807 1809 1811 1813 1815 1817 1819 1821 1823 1825 1827 1829 1831 1833 1835 1837 1839 1841" data-numbers="1801 1803 1805 1807 1809 1811 1813 1815 1817 1819 1821 1823 1825 1827 1829 1831 1833 1835 1837 1839 1841"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">18xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Warszawa Włochy</span></a><a href="export/EIE_19xx.html" class="train-item" data-search="EIE 19xx | Warszawa Wschodnia - Łódź Widzew 1901 1903 1905" data-numbers="1901 1903 1905"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">19xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Łódź Widzew</span></a><a href="export/EIJ_19xx.html" class="train-item" data-search="EIJ 19xx | Warszawa Wschodnia - Łódź Widzew 1931 1933 1935 1937 1939 1941 1943" data-numbers="1931 1933 1935 1937 1939 1941 1943"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">19xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Łódź Widzew</span></a><a href="export/EIE_27xx.html" class="train-item" data-search="EIE 27xx | Mikołajów - Zgierz Kontrewers 2700 2702 2704 2706 2708 2710 2712 2714 2716 2718" data-numbers="2700 2702 2704 2706 2708 2710 2712 2714 2716 2718"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">27xx</span><span class="train-sep"></span><span class="train-route">Mikołajów - Zgierz Kontrewers</span></a><a href="export/EIJ_31xx.html" class="train-item" data-search="EIJ 31xx | Kraków Główny - Warszawa Wschodnia 3100 3102 3104 3106 3108 3110 3112 3114 3116 3118" data-numbers="3100 3102 3104 3106 3108 3110 3112 3114 3116 3118"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">31xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Warszawa Wschodnia</span></a><a href="export/EIJ_35xx.html" class="train-item" data-search="EIJ 35xx | Kraków Główny - Warszawa Wschodnia 3500 3502 3504 3506 3508 3510 3512 3514" data-numbers="3500 3502 3504 3506 3508 3510 3512 3514"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">35xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Warszawa Wschodnia</span></a><a href="export/EIE_36xx.html" class="train-item" data-search="EIE 36xx | Kraków Główny - Katowice 3601 3603 3605 3607 3609 3611 3613 3615 3617 3619 3621 3623 3625 3627 3629 3631 3633 3635 3637" data-numbers="3601 3603 3605 3607 3609 3611 3613 3615 3617 3619 3621 3623 3625 3627 3629 3631 3633 3635 3637"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">36xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Katowice</span></a><a href="export/EIE_37xx.html" class="train-item" data-search="EIE 37xx | Kraków Główny - Sędzice 3720 3722 3724 3726 3728 3730 3732 3734 3736" data-numbers="3720 3722 3724 3726 3728 3730 3732 3734 3736"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">37xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Sędzice</span></a><a href="export/EIJ_41xx.html" class="train-item" data-search="EIJ 41xx | Katowice - Warszawa Wschodnia 4100 4102 4104 4106 4108 4110 4112 4114 4116 4118" data-numbers="4100 4102 4104 4106 4108 4110 4112 4114 4116 4118"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">41xx</span><span class="train-sep"></span><span class="train-route">Katowice - Warszawa Wschodnia</span></a><a href="export/EIJ_45xx.html" class="train-item" data-search="EIJ 45xx | Katowice - Warszawa Wschodnia 4500 4502 4504 4506 4508 4510 4512 4514 4516" data-numbers="4500 4502 4504 4506 4508 4510 4512 4514 4516"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">45xx</span><span class="train-sep"></span><span class="train-route">Katowice - Warszawa Wschodnia</span></a><a href="export/EIJ_53xx.html" class="train-item" data-search="EIJ 53xx | Warszawa Wschodnia - Kraków Główny 5301 5303 5305 5307 5309 5311 5313 5315" data-numbers="5301 5303 5305 5307 5309 5311 5313 5315"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">53xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Kraków Główny</span></a><a href="export/EIJ_54xx.html" class="train-item" data-search="EIJ 54xx | Warszawa Wschodnia - Katowice 5401 5403 5405 5407 5409 5411 5413 5415 5417" data-numbers="5401 5403 5405 5407 5409 5411 5413 5415 5417"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">54xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a><a href="export/EIJ_61xx.html" class="train-item" data-search="EIJ 61xx | Żelisławice - Warszawa Wschodnia 6102 6104 6106 6108 6110 6112 6114 6116 6118 6120 6122 6124 6126 6128 6130 6132 6134 6136 6138 6140 6142 6144 6146 6148 6150 6152 6154 6156 6158 6160 6162" data-numbers="6102 6104 6106 6108 6110 6112 6114 6116 6118 6120 6122 6124 6126 6128 6130 6132 6134 6136 6138 6140 6142 6144 6146 6148 6150 6152 6154 6156 6158 6160 6162"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">61xx</span><span class="train-sep"></span><span class="train-route">Żelisławice - Warszawa Wschodnia</span></a><a href="export/EIE_63xx.html" class="train-item" data-search="EIE 63xx | Katowice - Kraków Główny 6300 6302 6304 6306 6308 6310 6312 6314 6316 6318 6320 6322 6324 6326 6328 6330 6332 6334 6336" data-numbers="6300 6302 6304 6306 6308 6310 6312 6314 6316 6318 6320 6322 6324 6326 6328 6330 6332 6334 6336"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">63xx</span><span class="train-sep"></span><span class="train-route">Katowice - Kraków Główny</span></a><a href="export/EIE_72xx.html" class="train-item" data-search="EIE 72xx | Zgierz Kontrewers - Mikołajów 7201 7203 7205 7207 7209 7211 7213 7215 7217" data-numbers="7201 7203 7205 7207 7209 7211 7213 7215 7217"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">72xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Mikołajów</span></a><a href="export/EIE_73xx.html" class="train-item" data-search="EIE 73xx | Sędzice - Kraków Główny 7321 7323 7325 7327 7329 7331 7333 7335 7337" data-numbers="7321 7323 7325 7327 7329 7331 7333 7335 7337"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">73xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Kraków Główny</span></a><a href="export/EIE_81xx.html" class="train-item" data-search="EIE 81xx | Warszawa Włochy - Warszawa Wschodnia 8100 8102 8104 8106 8108 8110 8112 8114 8116 8118 8120 8122 8124 8126 8128 8130 8132 8134 8136 8138 8140" data-numbers="8100 8102 8104 8106 8108 8110 8112 8114 8116 8118 8120 8122 8124 8126 8128 8130 8132 8134 8136 8138 8140"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">81xx</span><span class="train-sep"></span><span class="train-route">Warszawa Włochy - Warszawa Wschodnia</span></a><a href="export/EIE_91xx.html" class="train-item" data-search="EIE 91xx | Łódź Widzew - Warszawa Wschodnia 9100 9102 9104" data-numbers="9100 9102 9104"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIE</span><span class="train-num">91xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Warszawa Wschodnia</span></a><a href="export/EIJ_91xx.html" class="train-item" data-search="EIJ 91xx | Łódź Widzew - Warszawa Wschodnia 9130 9132 9134 9136 9138 9140 9142 9144 9146" data-numbers="9130 9132 9134 9136 9138 9140 9142 9144 9146"><span class="cat-badge" style="background-color: #0011FF; color: #FFFFFF;">EIJ</span><span class="train-num">91xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Warszawa Wschodnia</span></a></div><div class="category-group"><div class="category-header"><span>MPE • MPJ • MPS • MPM</span></div><a href="export/MPE_131xx.html" class="train-item" data-search="MPE 131xx | Warszawa Wschodnia - Kraków Główny 13141" data-numbers="13141"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">131xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Kraków Główny</span></a><a href="export/MPE_161xx.html" class="train-item" data-search="MPE 161xx | Warszawa Wschodnia - Sędzice 16105 16107 16109 16111 16113 16115 16117 16119 16121 16123 16125 16127 16129 16131 16133 16135 16137 16139 16141 16143 16145 16147 16149 16151 16153 16155 16157 16159 16161 16163 16165 16167 16169 16171 16173 16175 16177 16179 16181" data-numbers="16105 16107 16109 16111 16113 16115 16117 16119 16121 16123 16125 16127 16129 16131 16133 16135 16137 16139 16141 16143 16145 16147 16149 16151 16153 16155 16157 16159 16161 16163 16165 16167 16169 16171 16173 16175 16177 16179 16181"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">161xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Sędzice</span></a><a href="export/MPE_231xx.html" class="train-item" data-search="MPE 231xx | Sędziszów - Kraków Główny 23151 23153 23155 23157 23159 23161 23163 23165 23167 23169" data-numbers="23151 23153 23155 23157 23159 23161 23163 23165 23167 23169"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">231xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Kraków Główny</span></a><a href="export/MPE_241xx.html" class="train-item" data-search="MPE 241xx | Knapówka/Sędziszów - Katowice 24101 24103 24105 24107 24109 24111 24113 24115 24117 24119 24121 24123 24125 24127 24129 24131 24133 24135 24137 24139 24141 24143 24145 24147 24149 24151 24153 24155 24157 24159 24161 24163 24165 24167 24169" data-numbers="24101 24103 24105 24107 24109 24111 24113 24115 24117 24119 24121 24123 24125 24127 24129 24131 24133 24135 24137 24139 24141 24143 24145 24147 24149 24151 24153 24155 24157 24159 24161 24163 24165 24167 24169"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">241xx</span><span class="train-sep"></span><span class="train-route">Knapówka/Sędziszów - Katowice</span></a><a href="export/MPE_311xx.html" class="train-item" data-search="MPE 311xx | Kraków Główny - Warszawa Wschodnia 31140" data-numbers="31140"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">311xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Warszawa Wschodnia</span></a><a href="export/MPE_321xx.html" class="train-item" data-search="MPE 321xx | Kraków Główny - Sędziszów 32150 32152 32154 32156 32158 32160 32162 32164 32166 32168" data-numbers="32150 32152 32154 32156 32158 32160 32162 32164 32166 32168"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">321xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Sędziszów</span></a><a href="export/MPE_351xx352xx.html" class="train-item" data-search="MPE 351xx / 352xx | Kraków Główny - Warszawa Wschodnia 35102 35104 35106 35108 35110 35112 35114 35116 35118 35120 35122 35124 35126 35128 35130 35132 35134 35136 35138 35140 35142 35144 35146 35148 35150 35152 35154 35156 35158 35160 35162 35164 35166 35168 35170 35172 35174 35176 35178 35180 35182 35184 35186 35188 35190 35192 35194 35196 35198 35200" data-numbers="35102 35104 35106 35108 35110 35112 35114 35116 35118 35120 35122 35124 35126 35128 35130 35132 35134 35136 35138 35140 35142 35144 35146 35148 35150 35152 35154 35156 35158 35160 35162 35164 35166 35168 35170 35172 35174 35176 35178 35180 35182 35184 35186 35188 35190 35192 35194 35196 35198 35200"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">351xx / 352xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Warszawa Wschodnia</span></a><a href="export/MPE_421xx422xx.html" class="train-item" data-search="MPE 421xx / 422xx | Katowice - Czarnca/Sędziszów 42100 42102 42104 42106 42108 42110 42112 42114 42116 42118 42120 42122 42124 42126 42128 42130 42132 42134 42136 42138 42140 42142 42144 42146 42148 42150 42152 42154 42156 42158 42160 42162 42164 42166 42168 42170 42172 42174 42176 42178 42180 42182 42184 42186 42188 42190 42192 42194 42196 42198 42200 42202 42204 42206" data-numbers="42100 42102 42104 42106 42108 42110 42112 42114 42116 42118 42120 42122 42124 42126 42128 42130 42132 42134 42136 42138 42140 42142 42144 42146 42148 42150 42152 42154 42156 42158 42160 42162 42164 42166 42168 42170 42172 42174 42176 42178 42180 42182 42184 42186 42188 42190 42192 42194 42196 42198 42200 42202 42204 42206"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">421xx / 422xx</span><span class="train-sep"></span><span class="train-route">Katowice - Czarnca/Sędziszów</span></a><a href="export/MPE_451xx.html" class="train-item" data-search="MPE 451xx | Zduńska Wola Karsznice - Zgierz 45100 45102 45104 45106 45108 45110 45112 45114 45116" data-numbers="45100 45102 45104 45106 45108 45110 45112 45114 45116"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">451xx</span><span class="train-sep"></span><span class="train-route">Zduńska Wola Karsznice - Zgierz</span></a><a href="export/MPE_471xx.html" class="train-item" data-search="MPE 471xx | Katowice - Sędzice 47100 47102 47104 47106 47108 47110 47112 47114 47116 47118" data-numbers="47100 47102 47104 47106 47108 47110 47112 47114 47116 47118"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">471xx</span><span class="train-sep"></span><span class="train-route">Katowice - Sędzice</span></a><a href="export/MPE_531xx532xx.html" class="train-item" data-search="MPE 531xx / 532xx | Warszawa Wschodnia - Kraków Główny 53103 53105 53107 53109 53111 53113 53115 53117 53119 53121 53123 53125 53127 53129 53131 53133 53135 53137 53139 53141 53143 53145 53147 53149 53151 53153 53155 53157 53159 53161 53163 53165 53167 53169 53171 53173 53175 53177 53179 53181 53183 53185 53187 53189 53191 53193 53195 53197 53199 53201" data-numbers="53103 53105 53107 53109 53111 53113 53115 53117 53119 53121 53123 53125 53127 53129 53131 53133 53135 53137 53139 53141 53143 53145 53147 53149 53151 53153 53155 53157 53159 53161 53163 53165 53167 53169 53171 53173 53175 53177 53179 53181 53183 53185 53187 53189 53191 53193 53195 53197 53199 53201"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">531xx / 532xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Kraków Główny</span></a><a href="export/MPE_541xx.html" class="train-item" data-search="MPE 541xx | Zgierz - Zduńska Wola Karsznice 54101 54103 54105 54107 54109 54111 54113 54115" data-numbers="54101 54103 54105 54107 54109 54111 54113 54115"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">541xx</span><span class="train-sep"></span><span class="train-route">Zgierz - Zduńska Wola Karsznice</span></a><a href="export/MPE_611xx.html" class="train-item" data-search="MPE 611xx | Sędzice - Warszawa Wschodnia 61100 61102 61104 61106 61108 61110 61112 61114 61116 61118 61120 61122 61124 61126 61128 61130 61132 61134 61136 61138 61140 61142 61144 61146 61148 61150 61152 61154 61156 61158 61160 61162 61164 61166 61168 61170 61172 61174" data-numbers="61100 61102 61104 61106 61108 61110 61112 61114 61116 61118 61120 61122 61124 61126 61128 61130 61132 61134 61136 61138 61140 61142 61144 61146 61148 61150 61152 61154 61156 61158 61160 61162 61164 61166 61168 61170 61172 61174"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">611xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Warszawa Wschodnia</span></a><a href="export/MPE_741xx.html" class="train-item" data-search="MPE 741xx | Sędzice - Katowice 74101 74103 74105 74107 74109 74111 74113 74115 74117" data-numbers="74101 74103 74105 74107 74109 74111 74113 74115 74117"><span class="cat-badge" style="background-color: #0094FF; color: #FFFFFF;">MPE</span><span class="train-num">741xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Katowice</span></a></div><div class="category-group"><div class="category-header"><span>MHE • MHJ • MHS</span></div><a href="export/MHE_141xx.html" class="train-item" data-search="MHE 141xx | Warszawa Wschodnia - Katowice 14101 14103 14105 14107 14109" data-numbers="14101 14103 14105 14107 14109"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">141xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a><a href="export/MHE_161xx.html" class="train-item" data-search="MHE 161xx | Warszawa Wschodnia - Sędzice 16101 16103" data-numbers="16101 16103"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">161xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Sędzice</span></a><a href="export/MHE_162xx.html" class="train-item" data-search="MHE 162xx | Warszawa Wschodnia - Katowice 16200 16202 16204 16206 16208" data-numbers="16200 16202 16204 16206 16208"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">162xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a><a href="export/MHE_163xx.html" class="train-item" data-search="MHE 163xx | Warszawa Wschodnia - Sędzice 16301 16303 16305" data-numbers="16301 16303 16305"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">163xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Sędzice</span></a><a href="export/MHE_381xx.html" class="train-item" data-search="MHE 381xx | Kraków Główny - Zgierz Kontrewers 38100 38102 38104 38106" data-numbers="38100 38102 38104 38106"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">381xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Zgierz Kontrewers</span></a><a href="export/MHE_411xx.html" class="train-item" data-search="MHE 411xx | Katowice - Warszawa Wschodnia 41100 41102 41104 41106 41108" data-numbers="41100 41102 41104 41106 41108"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">411xx</span><span class="train-sep"></span><span class="train-route">Katowice - Warszawa Wschodnia</span></a><a href="export/MHE_452xx.html" class="train-item" data-search="MHE 452xx | Katowice - Zgierz Kontrewers 45200 45202 45204" data-numbers="45200 45202 45204"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">452xx</span><span class="train-sep"></span><span class="train-route">Katowice - Zgierz Kontrewers</span></a><a href="export/MHE_542xx.html" class="train-item" data-search="MHE 542xx | Zgierz Kontrewers - Katowice 54201 54203 54205 54207" data-numbers="54201 54203 54205 54207"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">542xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Katowice</span></a><a href="export/MHE_611xx.html" class="train-item" data-search="MHE 611xx | Rozprza - Warszawa Wschodnia 61130 61132" data-numbers="61130 61132"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">611xx</span><span class="train-sep"></span><span class="train-route">Rozprza - Warszawa Wschodnia</span></a><a href="export/MHE_612xx.html" class="train-item" data-search="MHE 612xx | Katowice - Warszawa Wschodnia 61200 61202 61204 61206 61208" data-numbers="61200 61202 61204 61206 61208"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">612xx</span><span class="train-sep"></span><span class="train-route">Katowice - Warszawa Wschodnia</span></a><a href="export/MHE_613xx.html" class="train-item" data-search="MHE 613xx | Sędzice - Warszawa Wschodnia 61300 61302 61304" data-numbers="61300 61302 61304"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">613xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Warszawa Wschodnia</span></a><a href="export/MHE_831xx.html" class="train-item" data-search="MHE 831xx | Zgierz Kontrewers - Kraków Główny 83101 83103 83105 83107" data-numbers="83101 83103 83105 83107"><span class="cat-badge" style="background-color: #000000; color: #FFFFFF;">MHE</span><span class="train-num">831xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Kraków Główny</span></a></div><div class="category-group"><div class="category-header"><span>MOE • MOJ • MOS • MOM</span></div><a href="export/MOJ_122xx.html" class="train-item" data-search="MOJ 122xx | Łódź Widzew - Mikołajów/Żelisławice 12233 12235 12237 12239 12241 12243 12245 12247 12249 12251 12253 12255 12257 12259 12261 12263 12265 12267" data-numbers="12233 12235 12237 12239 12241 12243 12245 12247 12249 12251 12253 12255 12257 12259 12261 12263 12265 12267"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">122xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Mikołajów/Żelisławice</span></a><a href="export/MOJ_175xx.html" class="train-item" data-search="MOJ 175xx | Smardzew - Sędzice 17501 17503 17505 17507 17509 17511 17513 17515 17517 17519 17521 17523 17525 17527 17529 17531 17533 17535 17537 17539" data-numbers="17501 17503 17505 17507 17509 17511 17513 17515 17517 17519 17521 17523 17525 17527 17529 17531 17533 17535 17537 17539"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">175xx</span><span class="train-sep"></span><span class="train-route">Smardzew - Sędzice</span></a><a href="export/MOJ_212xx.html" class="train-item" data-search="MOJ 212xx | Czarnca - Łódź Widzew 21222 21224 21226 21228 21230 21232 21234 21236 21238 21240 21242 21244 21246 21248 21250 21252 21254 21256 21258 21260 21262 21264 21266 21268" data-numbers="21222 21224 21226 21228 21230 21232 21234 21236 21238 21240 21242 21244 21246 21248 21250 21252 21254 21256 21258 21260 21262 21264 21266 21268"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">212xx</span><span class="train-sep"></span><span class="train-route">Czarnca - Łódź Widzew</span></a><a href="export/MOE-MOJ_239xx.html" class="train-item" data-search="MOE MOJ 239xx | Sędziszów - Kraków Główny 23901 23903 23905 23907 23909 23911 23913 23915 23917 23919 23921 23923 23925 23927 23929 23931 23933 23935 23937 23939 23941 23943 23945 23947 23949 23951 23953 23955 23957 23959 23961 23963 23965 23967 23969 23971 23973 23975 23977 23979 23981 23983 23985" data-numbers="23901 23903 23905 23907 23909 23911 23913 23915 23917 23919 23921 23923 23925 23927 23929 23931 23933 23935 23937 23939 23941 23943 23945 23947 23949 23951 23953 23955 23957 23959 23961 23963 23965 23967 23969 23971 23973 23975 23977 23979 23981 23983 23985"><span class="cat-badge cat-badge--multi" style="background-color: #4CFF00; color: #000000;">MOE<br>MOJ</span><span class="train-num">239xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Kraków Główny</span></a><a href="export/MOE-MOJ_329xx.html" class="train-item" data-search="MOE MOJ 329xx | Kraków Główny - Sędziszów 32900 32902 32904 32906 32908 32910 32912 32914 32916 32918 32920 32922 32924 32926 32928 32930 32932 32934 32936 32938 32940 32942 32944 32946 32948 32950 32952 32954 32956 32958 32960 32962 32964 32966 32968 32970 32972 32974 32976 32978 32980 32982 32984 32986" data-numbers="32900 32902 32904 32906 32908 32910 32912 32914 32916 32918 32920 32922 32924 32926 32928 32930 32932 32934 32936 32938 32940 32942 32944 32946 32948 32950 32952 32954 32956 32958 32960 32962 32964 32966 32968 32970 32972 32974 32976 32978 32980 32982 32984 32986"><span class="cat-badge cat-badge--multi" style="background-color: #4CFF00; color: #000000;">MOE<br>MOJ</span><span class="train-num">329xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Sędziszów</span></a><a href="export/MOJ_343xx.html" class="train-item" data-search="MOJ 343xx | Kraków Główny - Katowice 34301 34303 34305 34307 34309 34311 34313 34315 34317 34319 34321 34323 34325 34327 34329 34331 34333 34335 34337" data-numbers="34301 34303 34305 34307 34309 34311 34313 34315 34317 34319 34321 34323 34325 34327 34329 34331 34333 34335 34337"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">343xx</span><span class="train-sep"></span><span class="train-route">Kraków Główny - Katowice</span></a><a href="export/MOJ_433xx.html" class="train-item" data-search="MOJ 433xx | Katowice - Kraków Główny 43300 43302 43304 43306 43308 43310 43312 43314 43316 43318 43320 43322 43324 43326 43328 43330 43332 43334 43336" data-numbers="43300 43302 43304 43306 43308 43310 43312 43314 43316 43318 43320 43322 43324 43326 43328 43330 43332 43334 43336"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">433xx</span><span class="train-sep"></span><span class="train-route">Katowice - Kraków Główny</span></a><a href="export/MOJ_715xx.html" class="train-item" data-search="MOJ 715xx | Sędzice - Smardzew 71550 71552 71554 71556 71558 71560 71562 71564 71566 71568 71570 71572 71574 71576 71578 71580 71582 71584 71586 71588" data-numbers="71550 71552 71554 71556 71558 71560 71562 71564 71566 71568 71570 71572 71574 71576 71578 71580 71582 71584 71586 71588"><span class="cat-badge" style="background-color: #4CFF00; color: #000000;">MOJ</span><span class="train-num">715xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Smardzew</span></a></div><div class="category-group"><div class="category-header"><span>RPP • RPE • RPJ • RPS • RPM</span></div><a href="export/RPJ_111xx_L.html" class="train-item" data-search="RPJ 111xx | Warszawa Wschodnia - Łódź Widzew 11101 11103 11105" data-numbers="11101 11103 11105"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">111xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Łódź Widzew</span></a><a href="export/RPJ_111xx_S.html" class="train-item" data-search="RPJ 111xx | Łódź Widzew - Warszawa Wschodnia 11150 11152 11154" data-numbers="11150 11152 11154"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">111xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Warszawa Wschodnia</span></a><a href="export/RPP_131xx.html" class="train-item" data-search="RPP 131xx | Sędziszów - Sosnowiec Maczki 13151" data-numbers="13151"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPP</span><span class="train-num">131xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Sosnowiec Maczki</span></a><a href="export/RPJ_191xx.html" class="train-item" data-search="RPJ 191xx | Warszawa Wschodnia - Bełchów 19101 19103 19105 19107" data-numbers="19101 19103 19105 19107"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">191xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Bełchów</span></a><a href="export/RPP_311xx.html" class="train-item" data-search="RPP 311xx | Sosnowiec Maczki - Sędziszów 31150" data-numbers="31150"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPP</span><span class="train-num">311xx</span><span class="train-sep"></span><span class="train-route">Sosnowiec Maczki - Sędziszów</span></a><a href="export/RPJ_401xx_L.html" class="train-item" data-search="RPJ 401xx | Myszków - Katowice 40101 40103 40105 40107 40109 40111 40113 40115 40117 40119 40121 40123 40125 40127 40129 40131 40133 40135 40137 40139 40141" data-numbers="40101 40103 40105 40107 40109 40111 40113 40115 40117 40119 40121 40123 40125 40127 40129 40131 40133 40135 40137 40139 40141"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">401xx</span><span class="train-sep"></span><span class="train-route">Myszków - Katowice</span></a><a href="export/RPJ_401xx_S.html" class="train-item" data-search="RPJ 401xx | Katowice - Myszków 40150 40152 40154 40156 40158 40160 40162 40164 40166 40168 40170 40172 40174 40176 40178 40180 40182 40184 40186 40188 40190" data-numbers="40150 40152 40154 40156 40158 40160 40162 40164 40166 40168 40170 40172 40174 40176 40178 40180 40182 40184 40186 40188 40190"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">401xx</span><span class="train-sep"></span><span class="train-route">Katowice - Myszków</span></a><a href="export/RPJ_911xx.html" class="train-item" data-search="RPJ 911xx | Bełchów - Warszawa Wschodnia 91150 91152 91154 91156" data-numbers="91150 91152 91154 91156"><span class="cat-badge" style="background-color: #007F0E; color: #FFFFFF;">RPJ</span><span class="train-num">911xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Warszawa Wschodnia</span></a></div><div class="category-group"><div class="category-header"><span>ROP • ROE • ROJ • ROS • ROM</span></div><a href="export/ROJ_115xx_S.html" class="train-item" data-search="ROJ 115xx | Łódź Widzew - Puszcza Mariańska 11500 11502 11504 11506 11508 11510 11512 11514 11516 11518 11520 11522 11524 11526 11528 11530 11532 11534 11536 11538 11540 11542 11544 11546 11548 11550 11552 11554 11556 11558 11560 11562 11564" data-numbers="11500 11502 11504 11506 11508 11510 11512 11514 11516 11518 11520 11522 11524 11526 11528 11530 11532 11534 11536 11538 11540 11542 11544 11546 11548 11550 11552 11554 11556 11558 11560 11562 11564"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">115xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Puszcza Mariańska</span></a><a href="export/ROJ_115xx_L.html" class="train-item" data-search="ROJ 115xx | Puszcza Mariańska - Łódź Widzew 11501 11503 11505 11507 11509 11511 11513 11515 11517 11519 11521 11523 11525 11527 11529 11531 11533 11535 11537 11539 11541 11543 11545 11547 11549 11551 11553 11555 11557 11559 11561 11563 11565 11567 11569 11571 11573 11575 11577 11579 11581 11583 11585 11587 11589" data-numbers="11501 11503 11505 11507 11509 11511 11513 11515 11517 11519 11521 11523 11525 11527 11529 11531 11533 11535 11537 11539 11541 11543 11545 11547 11549 11551 11553 11555 11557 11559 11561 11563 11565 11567 11569 11571 11573 11575 11577 11579 11581 11583 11585 11587 11589"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">115xx</span><span class="train-sep"></span><span class="train-route">Puszcza Mariańska - Łódź Widzew</span></a><a href="export/ROE-ROJ_116xx_L.html" class="train-item" data-search="ROE ROJ 116xx | Puszcza Mariańska - Łódź Widzew 11601 11603 11605 11607 11609 11611 11613 11615 11617 11619" data-numbers="11601 11603 11605 11607 11609 11611 11613 11615 11617 11619"><span class="cat-badge cat-badge--multi" style="background-color: #D9FF99; color: #000000;">ROE<br>ROJ</span><span class="train-num">116xx</span><span class="train-sep"></span><span class="train-route">Puszcza Mariańska - Łódź Widzew</span></a><a href="export/ROE-ROJ_116xx_S.html" class="train-item" data-search="ROE ROJ 116xx | Łódź Widzew - Puszcza Mariańska 11650 11652 11654 11656 11658 11660 11662 11664 11666 11668" data-numbers="11650 11652 11654 11656 11658 11660 11662 11664 11666 11668"><span class="cat-badge cat-badge--multi" style="background-color: #D9FF99; color: #000000;">ROE<br>ROJ</span><span class="train-num">116xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Puszcza Mariańska</span></a><a href="export/ROJ_143xx.html" class="train-item" data-search="ROJ 143xx | Łódź Widzew - Rozprza 14300 14302 14304 14306 14308 14310 14312 14314 14316 14318" data-numbers="14300 14302 14304 14306 14308 14310 14312 14314 14316 14318"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">143xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Rozprza</span></a><a href="export/ROJ_144xx.html" class="train-item" data-search="ROJ 144xx | Łódź Widzew - Rozprza 14400 14402 14404 14406 14408 14410 14412 14414 14416 14418" data-numbers="14400 14402 14404 14406 14408 14410 14412 14414 14416 14418"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">144xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Rozprza</span></a><a href="export/ROJ_145xx.html" class="train-item" data-search="ROJ 145xx | Zgierz Kontrewers - Rozprza 14551 14553 14555 14557 14559 14561 14563 14565 14567" data-numbers="14551 14553 14555 14557 14559 14561 14563 14565 14567"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">145xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Rozprza</span></a><a href="export/ROJ_198xx.html" class="train-item" data-search="ROJ 198xx | Warszawa Wschodnia - Bełchów 19801 19803 19805 19807 19809 19811 19813 19815 19817 19819 19821 19823 19825 19827 19829 19831 19833 19835 19837 19839 19841 19843 19845 19847 19849 19851 19853 19855 19857 19859 19861 19863 19865 19867 19869 19871 19873 19875 19877 19879 19881 19883" data-numbers="19801 19803 19805 19807 19809 19811 19813 19815 19817 19819 19821 19823 19825 19827 19829 19831 19833 19835 19837 19839 19841 19843 19845 19847 19849 19851 19853 19855 19857 19859 19861 19863 19865 19867 19869 19871 19873 19875 19877 19879 19881 19883"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">198xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Bełchów</span></a><a href="export/ROJ_199xx.html" class="train-item" data-search="ROJ 199xx | Warszawa Wschodnia - Bełchów 19901 19903 19905 19907 19909 19911 19913 19915 19917 19919 19921 19923 19925 19927 19929 19931" data-numbers="19901 19903 19905 19907 19909 19911 19913 19915 19917 19919 19921 19923 19925 19927 19929 19931"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">199xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Bełchów</span></a><a href="export/ROE-ROJ_249xx.html" class="train-item" data-search="ROE ROJ 249xx | Sędziszów - Katowice 24901 24903 24905 24907 24909 24911 24913 24915 24917 24919" data-numbers="24901 24903 24905 24907 24909 24911 24913 24915 24917 24919"><span class="cat-badge cat-badge--multi" style="background-color: #D9FF99; color: #000000;">ROE<br>ROJ</span><span class="train-num">249xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Katowice</span></a><a href="export/ROJ_406xx_L.html" class="train-item" data-search="ROJ 406xx | Myszków - Katowice 40601 40603 40605 40607 40609 40611 40613 40615 40617 40619 40621 40623 40625 40627 40629 40631 40633 40635 40637 40639 40641" data-numbers="40601 40603 40605 40607 40609 40611 40613 40615 40617 40619 40621 40623 40625 40627 40629 40631 40633 40635 40637 40639 40641"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">406xx</span><span class="train-sep"></span><span class="train-route">Myszków - Katowice</span></a><a href="export/ROJ_406xx_S.html" class="train-item" data-search="ROJ 406xx | Katowice - Myszków 40650 40652 40654 40656 40658 40660 40662 40664 40666 40668 40670 40672 40674 40676 40678 40680 40682 40684 40686 40688" data-numbers="40650 40652 40654 40656 40658 40660 40662 40664 40666 40668 40670 40672 40674 40676 40678 40680 40682 40684 40686 40688"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">406xx</span><span class="train-sep"></span><span class="train-route">Katowice - Myszków</span></a><a href="export/ROJ_412xx.html" class="train-item" data-search="ROJ 412xx | Rozprza - Łódź Widzew 41200 41202 41204 41206 41208 41210 41212 41214 41216 41218 41220 41222 41224 41226 41228 41230 41232 41234 41236 41238 41240 41242 41244 41246 41248" data-numbers="41200 41202 41204 41206 41208 41210 41212 41214 41216 41218 41220 41222 41224 41226 41228 41230 41232 41234 41236 41238 41240 41242 41244 41246 41248"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">412xx</span><span class="train-sep"></span><span class="train-route">Rozprza - Łódź Widzew</span></a><a href="export/ROJ_415xx.html" class="train-item" data-search="ROJ 415xx | Rozprza - Zgierz Kontrewers 41500 41502 41504 41506 41508 41510 41512 41514 41516 41518" data-numbers="41500 41502 41504 41506 41508 41510 41512 41514 41516 41518"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">415xx</span><span class="train-sep"></span><span class="train-route">Rozprza - Zgierz Kontrewers</span></a><a href="export/ROE-ROJ_429xx.html" class="train-item" data-search="ROE ROJ 429xx | Katowice - Sędziszów 42900 42902 42904 42906 42908 42910 42912 42914 42916 42918" data-numbers="42900 42902 42904 42906 42908 42910 42912 42914 42916 42918"><span class="cat-badge cat-badge--multi" style="background-color: #D9FF99; color: #000000;">ROE<br>ROJ</span><span class="train-num">429xx</span><span class="train-sep"></span><span class="train-route">Katowice - Sędziszów</span></a><a href="export/ROJ_918xx.html" class="train-item" data-search="ROJ 918xx | Bełchów - Warszawa Wschodnia 91800 91802 91804 91806 91808 91810 91812 91814 91816 91818 91820 91822 91824 91826 91828 91830 91832 91834 91836 91838 91840 91842 91844 91846 91848 91850 91852 91854 91856 91858 91860 91862 91864 91866 91868 91870 91872 91874 91876 91878 91880 91882 91884 91886 91888 91890" data-numbers="91800 91802 91804 91806 91808 91810 91812 91814 91816 91818 91820 91822 91824 91826 91828 91830 91832 91834 91836 91838 91840 91842 91844 91846 91848 91850 91852 91854 91856 91858 91860 91862 91864 91866 91868 91870 91872 91874 91876 91878 91880 91882 91884 91886 91888 91890"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">918xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Warszawa Wschodnia</span></a><a href="export/ROJ_919xx.html" class="train-item" data-search="ROJ 919xx | Bełchów - Warszawa Wschodnia 91900 91902 91904 91906 91908 91910 91912 91914 91916 91918 91920 91922 91924 91926 91928 91930 91932 91934 91936" data-numbers="91900 91902 91904 91906 91908 91910 91912 91914 91916 91918 91920 91922 91924 91926 91928 91930 91932 91934 91936"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">919xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Warszawa Wschodnia</span></a><a href="export/ROJ_977xx.html" class="train-item" data-search="ROJ 977xx | Łódź Widzew - Zgierz Kontrewers 97700 97702 97704 97706 97708 97710 97712 97714 97716 97718 97720 97722 97724 97726 97728 97730 97732 97734 97736" data-numbers="97700 97702 97704 97706 97708 97710 97712 97714 97716 97718 97720 97722 97724 97726 97728 97730 97732 97734 97736"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">977xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Zgierz Kontrewers</span></a><a href="export/ROJ_978xx.html" class="train-item" data-search="ROJ 978xx | Zgierz Kontrewers - Łódź Widzew 97801 97803 97805 97807 97809 97811 97813 97815 97817 97819 97821 97823 97825 97827 97829 97831 97833 97835 97837" data-numbers="97801 97803 97805 97807 97809 97811 97813 97815 97817 97819 97821 97823 97825 97827 97829 97831 97833 97835 97837"><span class="cat-badge" style="background-color: #D9FF99; color: #000000;">ROJ</span><span class="train-num">978xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Łódź Widzew</span></a></div><div class="category-group"><div class="category-header"><span>RAE • RAJ • RAS • RAM</span></div><a href="export/RAJ_194xx.html" class="train-item" data-search="RAJ 194xx | Warszawa Wschodnia - Warszawa Włochy 19400 19402 19404 19406 19408 19410 19412 19414 19416 19418 19420 19422 19424 19426 19428 19430 19432 19434 19436 19438 19440 19442 19444 19446 19448 19450 19452 19454 19456 19458 19460 19462 19464 19466 19468 19470 19472 19474 19476" data-numbers="19400 19402 19404 19406 19408 19410 19412 19414 19416 19418 19420 19422 19424 19426 19428 19430 19432 19434 19436 19438 19440 19442 19444 19446 19448 19450 19452 19454 19456 19458 19460 19462 19464 19466 19468 19470 19472 19474 19476"><span class="cat-badge" style="background-color: #F4FFF6; color: #007F0E;">RAJ</span><span class="train-num">194xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Warszawa Włochy</span></a><a href="export/RAJ_914xx.html" class="train-item" data-search="RAJ 914xx | Warszawa Włochy - Warszawa Wschodnia 91400 91402 91404 91406 91408 91410 91412 91414 91416 91418 91420 91422 91424 91426 91428 91430 91432 91434 91436 91438 91440 91442 91444 91446 91448 91450 91452 91454 91456 91458 91460 91462 91464 91466 91468 91470 91472 91474 91476" data-numbers="91400 91402 91404 91406 91408 91410 91412 91414 91416 91418 91420 91422 91424 91426 91428 91430 91432 91434 91436 91438 91440 91442 91444 91446 91448 91450 91452 91454 91456 91458 91460 91462 91464 91466 91468 91470 91472 91474 91476"><span class="cat-badge" style="background-color: #F4FFF6; color: #007F0E;">RAJ</span><span class="train-num">914xx</span><span class="train-sep"></span><span class="train-route">Warszawa Włochy - Warszawa Wschodnia</span></a></div><div class="category-group"><div class="category-header"><span>PWP • PWE • PWJ • PWS • PWM</span></div><a href="export/PWJ_1360xx.html" class="train-item" data-search="PWJ 1360xx | Łódź Widzew - Kraków Główny 136001" data-numbers="136001"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWJ</span><span class="train-num">1360xx</span><span class="train-sep"></span><span class="train-route">Łódź Widzew - Kraków Główny</span></a><a href="export/PWJ_1460xx.html" class="train-item" data-search="PWJ 1460xx | Warszawa Wschodnia - Katowice 146001" data-numbers="146001"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWJ</span><span class="train-num">1460xx</span><span class="train-sep"></span><span class="train-route">Warszawa Wschodnia - Katowice</span></a><a href="export/PWJ_2460xx.html" class="train-item" data-search="PWJ 2460xx | Sędziszów - Katowice 246001" data-numbers="246001"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWJ</span><span class="train-num">2460xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Katowice</span></a><a href="export/PWE_3466xx.html" class="train-item" data-search="PWE 3466xx | Jaworzno Szczakowa - Myszków 346600 346602 346604 346606 346608 346610 346612 346614" data-numbers="346600 346602 346604 346606 346608 346610 346612 346614"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWE</span><span class="train-num">3466xx</span><span class="train-sep"></span><span class="train-route">Jaworzno Szczakowa - Myszków</span></a><a href="export/PWJ_4460xx.html" class="train-item" data-search="PWJ 4460xx | Myszków - Sosnowiec Maczki 446011 446013 446015 446017 446019 446021 446023 446025 446027 446029 446031 446033 446035 446037 446039 446041 446043 446045 446047" data-numbers="446011 446013 446015 446017 446019 446021 446023 446025 446027 446029 446031 446033 446035 446037 446039 446041 446043 446045 446047"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWJ</span><span class="train-num">4460xx</span><span class="train-sep"></span><span class="train-route">Myszków - Sosnowiec Maczki</span></a><a href="export/PWJ_6260xx.html" class="train-item" data-search="PWJ 6260xx | Żelisławice - Radzice 626000" data-numbers="626000"><span class="cat-badge" style="background-color: #F4FFF6; color: #FF5BF6;">PWJ</span><span class="train-num">6260xx</span><span class="train-sep"></span><span class="train-route">Żelisławice - Radzice</span></a></div></div>
                 <div class="no-results hidden" id="no-osobni">No results found.</div>
             </div>
             <div class="column">
                 <h2>Freight Trains</h2>
-                <div id="nakladniList">{nakladni_html}</div>
+                <div id="nakladniList"><div class="category-group"><div class="category-header"><span>TGE • TGS</span></div><a href="export/TGE_5611xx.html" class="train-item" data-search="TGE 5611xx | Zduńska Wola Karsznice - Sędzice 561101 561103 561105 561107 561109 561111 561113 561115 561117 561119" data-numbers="561101 561103 561105 561107 561109 561111 561113 561115 561117 561119"><span class="cat-badge" style="background-color: #FF0000; color: #ffffff;">TGE</span><span class="train-num">5611xx</span><span class="train-sep"></span><span class="train-route">Zduńska Wola Karsznice - Sędzice</span></a></div><div class="category-group"><div class="category-header"><span>TRE • TRS</span></div><a href="export/TRE_6510xx.html" class="train-item" data-search="TRE 6510xx | Sędzice - Zduńska Wola Karsznice 651000 651002 651004 651006 651008 651010" data-numbers="651000 651002 651004 651006 651008 651010"><span class="cat-badge" style="background-color: #FF6A00; color: #000000;">TRE</span><span class="train-num">6510xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Zduńska Wola Karsznice</span></a></div><div class="category-group"><div class="category-header"><span>TDE • TDS</span></div><a href="export/TDE_1320xx.html" class="train-item" data-search="TDE 1320xx | Warszawa Główna Towarowa - Dłubnia 132045 132047 132049 132051 132053 132055 132057 132059 132061 132063 132065 132067 132069 132071 132073 132075 132077 132079 132081 132083 132085 132087 132089" data-numbers="132045 132047 132049 132051 132053 132055 132057 132059 132061 132063 132065 132067 132069 132071 132073 132075 132077 132079 132081 132083 132085 132087 132089"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">1320xx</span><span class="train-sep"></span><span class="train-route">Warszawa Główna Towarowa - Dłubnia</span></a><a href="export/TDE_1420xx.html" class="train-item" data-search="TDE 1420xx | Marków - Dąbrowa Górnicza Towarowa 142053 142055 142057 142059 142061 142063 142065 142067 142069 142071 142073 142075 142077 142079 142081 142083 142085 142087 142089 142091 142093 142095 142097 142099" data-numbers="142053 142055 142057 142059 142061 142063 142065 142067 142069 142071 142073 142075 142077 142079 142081 142083 142085 142087 142089 142091 142093 142095 142097 142099"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">1420xx</span><span class="train-sep"></span><span class="train-route">Marków - Dąbrowa Górnicza Towarowa</span></a><a href="export/TDE_1520xx.html" class="train-item" data-search="TDE 1520xx | Warszawa Główna Towarowa - Zduńska Wola Karsznice 152031 152033 152035 152037 152039 152041 152043 152045 152047 152049 152051 152053 152055 152057 152059" data-numbers="152031 152033 152035 152037 152039 152041 152043 152045 152047 152049 152051 152053 152055 152057 152059"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">1520xx</span><span class="train-sep"></span><span class="train-route">Warszawa Główna Towarowa - Zduńska Wola Karsznice</span></a><a href="export/TDE_2421xx.html" class="train-item" data-search="TDE 2421xx | Sędziszów - Gliwice Port 242103 242105 242107 242109 242111 242113 242115 242117 242119 242121 242123 242125 242127 242129 242131" data-numbers="242103 242105 242107 242109 242111 242113 242115 242117 242119 242121 242123 242125 242127 242129 242131"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">2421xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Gliwice Port</span></a><a href="export/TDE_2422xx.html" class="train-item" data-search="TDE 2422xx | Knapówka - Katowice 242201 242203 242205 242207 242209 242211 242213 242215 242217 242219 242221 242223" data-numbers="242201 242203 242205 242207 242209 242211 242213 242215 242217 242219 242221 242223"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">2422xx</span><span class="train-sep"></span><span class="train-route">Knapówka - Katowice</span></a><a href="export/TDE_4120xx.html" class="train-item" data-search="TDE 4120xx | Sosnowiec Maczki - Zgierz Kontrewers 412010 412012 412014 412016 412018 412020 412022 412024 412026 412028 412030 412032 412034 412036 412038 412040 412042 412044 412046 412048 412050 412052 412054 412056" data-numbers="412010 412012 412014 412016 412018 412020 412022 412024 412026 412028 412030 412032 412034 412036 412038 412040 412042 412044 412046 412048 412050 412052 412054 412056"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">4120xx</span><span class="train-sep"></span><span class="train-route">Sosnowiec Maczki - Zgierz Kontrewers</span></a><a href="export/TDE_4121xx.html" class="train-item" data-search="TDE 4121xx | Dąbrowa Górnicza Towarowa - Marków 412120 412122 412124 412126 412128 412130 412132 412134 412136 412138 412140 412142 412144 412146 412148 412150 412152 412154 412156 412158 412160 412162 412164" data-numbers="412120 412122 412124 412126 412128 412130 412132 412134 412136 412138 412140 412142 412144 412146 412148 412150 412152 412154 412156 412158 412160 412162 412164"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">4121xx</span><span class="train-sep"></span><span class="train-route">Dąbrowa Górnicza Towarowa - Marków</span></a><a href="export/TDE_4220xx.html" class="train-item" data-search="TDE 4220xx | Katowice - Sędziszów 422000 422002 422004 422006 422008" data-numbers="422000 422002 422004 422006 422008"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">4220xx</span><span class="train-sep"></span><span class="train-route">Katowice - Sędziszów</span></a><a href="export/TDE_4525xx.html" class="train-item" data-search="TDE 4525xx | Sędzice - Dionizów 452500 452502 452504 452506 452508 452510" data-numbers="452500 452502 452504 452506 452508 452510"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">4525xx</span><span class="train-sep"></span><span class="train-route">Sędzice - Dionizów</span></a><a href="export/TDE_5120xx.html" class="train-item" data-search="TDE 5120xx | Zduńska Wola Karsznice - Warszawa Główna Towarowa 512010 512012 512014 512016 512018 512020 512022 512024 512026 512028 512030 512032 512034 512036 512038 512040 512042 512044 512046 512048 512050 512052 512054 512056" data-numbers="512010 512012 512014 512016 512018 512020 512022 512024 512026 512028 512030 512032 512034 512036 512038 512040 512042 512044 512046 512048 512050 512052 512054 512056"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">5120xx</span><span class="train-sep"></span><span class="train-route">Zduńska Wola Karsznice - Warszawa Główna Towarowa</span></a><a href="export/TDE_5425xx.html" class="train-item" data-search="TDE 5425xx | Dionizów - Sędzice 542501 542503 542505 542507 542509 542511 542513 542515 542517 542519 542521" data-numbers="542501 542503 542505 542507 542509 542511 542513 542515 542517 542519 542521"><span class="cat-badge" style="background-color: #FF9EF6; color: #000000;">TDE</span><span class="train-num">5425xx</span><span class="train-sep"></span><span class="train-route">Dionizów - Sędzice</span></a></div><div class="category-group"><div class="category-header"><span>TME • TMS</span></div><a href="export/TME_1440xx.html" class="train-item" data-search="TME 1440xx | Bełchów - Rozprza 144041 144043 144045 144047 144049 144051 144053 144055 144057 144059 144061 144063 144065 144067 144069 144071 144073 144075 144077 144079 144081 144083 144085 144087" data-numbers="144041 144043 144045 144047 144049 144051 144053 144055 144057 144059 144061 144063 144065 144067 144069 144071 144073 144075 144077 144079 144081 144083 144085 144087"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">1440xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Rozprza</span></a><a href="export/TME_1442xx.html" class="train-item" data-search="TME 1442xx | Sędziszów - Staszic 144201 144203 144205 144207 144209 144211 144213 144215 144217 144219 144221 144223 144225 144227 144229 144231 144233 144235 144237 144239 144241 144243 144245 144247" data-numbers="144201 144203 144205 144207 144209 144211 144213 144215 144217 144219 144221 144223 144225 144227 144229 144231 144233 144235 144237 144239 144241 144243 144245 144247"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">1442xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Staszic</span></a><a href="export/TME_1448xx.html" class="train-item" data-search="TME 1448xx | Warszawa Główna Towarowa - Sosnowiec Maczki 144801 144803 144805" data-numbers="144801 144803 144805"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">1448xx</span><span class="train-sep"></span><span class="train-route">Warszawa Główna Towarowa - Sosnowiec Maczki</span></a><a href="export/TME_1540xx.html" class="train-item" data-search="TME 1540xx | Warszawa Główna Towarowa - Dionizów 154021 154023 154025 154027 154029 154031 154033 154035 154037 154039 154041" data-numbers="154021 154023 154025 154027 154029 154031 154033 154035 154037 154039 154041"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">1540xx</span><span class="train-sep"></span><span class="train-route">Warszawa Główna Towarowa - Dionizów</span></a><a href="export/TME_2343xx.html" class="train-item" data-search="TME 2343xx | Sędziszów - Kraków Olsza/Dłubnia 234301 234303 234305 234307 234309 234311 234313 234315 234317 234319 234321 234323 234325 234327 234329 234331 234333 234335 234337 234339 234341 234343 234345 234347 234349 234351 234353 234355 234357 234359 234361 234363 234365 234367 234369 234371 234373 234375 234377 234379 234381 234383 234385 234387 234389 234391 234393 234395 234397" data-numbers="234301 234303 234305 234307 234309 234311 234313 234315 234317 234319 234321 234323 234325 234327 234329 234331 234333 234335 234337 234339 234341 234343 234345 234347 234349 234351 234353 234355 234357 234359 234361 234363 234365 234367 234369 234371 234373 234375 234377 234379 234381 234383 234385 234387 234389 234391 234393 234395 234397"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">2343xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Kraków Olsza/Dłubnia</span></a><a href="export/TME_2440xx.html" class="train-item" data-search="TME 2440xx | Knapówka - Jaworzno Szczakowa/Katowice 244031 244033 244035 244037 244039 244041 244043 244045 244047 244049 244051 244053" data-numbers="244031 244033 244035 244037 244039 244041 244043 244045 244047 244049 244051 244053"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">2440xx</span><span class="train-sep"></span><span class="train-route">Knapówka - Jaworzno Szczakowa/Katowice</span></a><a href="export/TME_3242xx.html" class="train-item" data-search="TME 3242xx | Kraków Olsza - Sędziszów 324200 324202 324204 324206 324208 324210 324212 324214 324216 324218 324220 324222 324224 324226 324228 324230 324232 324234 324236 324238 324240 324242 324244 324246 324248 324250 324252 324254 324256 324258 324260 324262 324264 324266 324268 324270 324272 324274 324276 324278 324280 324282 324284 324286 324288 324290 324292 324294 324296" data-numbers="324200 324202 324204 324206 324208 324210 324212 324214 324216 324218 324220 324222 324224 324226 324228 324230 324232 324234 324236 324238 324240 324242 324244 324246 324248 324250 324252 324254 324256 324258 324260 324262 324264 324266 324268 324270 324272 324274 324276 324278 324280 324282 324284 324286 324288 324290 324292 324294 324296"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">3242xx</span><span class="train-sep"></span><span class="train-route">Kraków Olsza - Sędziszów</span></a><a href="export/TME_3441xx.html" class="train-item" data-search="TME 3441xx | Kraków Olsza - Koniecpol 344100 344102 344104 344106 344108 344110 344112 344114 344116 344118 344120 344122 344124 344126 344128 344130 344132 344134 344136 344138 344140 344142 344144 344146" data-numbers="344100 344102 344104 344106 344108 344110 344112 344114 344116 344118 344120 344122 344124 344126 344128 344130 344132 344134 344136 344138 344140 344142 344144 344146"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">3441xx</span><span class="train-sep"></span><span class="train-route">Kraków Olsza - Koniecpol</span></a><a href="export/TME_4140xx.html" class="train-item" data-search="TME 4140xx | Dąbrowa Górnicza Towarowa - Mikołajów 414010 414012 414014 414016 414018 414020 414022 414024 414026 414028 414030 414032 414034 414036 414038 414040 414042 414044 414046 414048 414050 414052 414054 414056" data-numbers="414010 414012 414014 414016 414018 414020 414022 414024 414026 414028 414030 414032 414034 414036 414038 414040 414042 414044 414046 414048 414050 414052 414054 414056"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4140xx</span><span class="train-sep"></span><span class="train-route">Dąbrowa Górnicza Towarowa - Mikołajów</span></a><a href="export/TME_4148xx.html" class="train-item" data-search="TME 4148xx | Sosnowiec Maczki - Warszawa Główna Towarowa 414800 414802 414804" data-numbers="414800 414802 414804"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4148xx</span><span class="train-sep"></span><span class="train-route">Sosnowiec Maczki - Warszawa Główna Towarowa</span></a><a href="export/TME_4240xx.html" class="train-item" data-search="TME 4240xx | KATOWICE MUCHOWIEC STASZIC - Sędziszów 424050 424052 424054 424056 424058 424060 424062 424064 424066 424068 424070 424072 424074 424076 424078 424080 424082 424084 424086 424088 424090 424092 424094 424096" data-numbers="424050 424052 424054 424056 424058 424060 424062 424064 424066 424068 424070 424072 424074 424076 424078 424080 424082 424084 424086 424088 424090 424092 424094 424096"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4240xx</span><span class="train-sep"></span><span class="train-route">KATOWICE MUCHOWIEC STASZIC - Sędziszów</span></a><a href="export/TME_4440xx.html" class="train-item" data-search="TME 4440xx | Myszków - Katowice Kostuchna 444001 444003 444005 444007 444009 444011 444013 444015 444017 444019 444021 444023 444025 444027 444029 444031 444033 444035 444037 444039 444041 444043 444045 444047" data-numbers="444001 444003 444005 444007 444009 444011 444013 444015 444017 444019 444021 444023 444025 444027 444029 444031 444033 444035 444037 444039 444041 444043 444045 444047"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4440xx</span><span class="train-sep"></span><span class="train-route">Myszków - Katowice Kostuchna</span></a><a href="export/TME_4445xx.html" class="train-item" data-search="TME 4445xx | Mysłowice - Katowice 444511 444513 444515 444517 444519 444521 444523 444525 444527 444529 444531 444533 444535 444537 444539 444541 444543 444545 444547 444549 444551 444553 444555 444557" data-numbers="444511 444513 444515 444517 444519 444521 444523 444525 444527 444529 444531 444533 444535 444537 444539 444541 444543 444545 444547 444549 444551 444553 444555 444557"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4445xx</span><span class="train-sep"></span><span class="train-route">Mysłowice - Katowice</span></a><a href="export/TME_4540xx.html" class="train-item" data-search="TME 4540xx | Zduńska Wola Karsznice - Dionizów 454001 454003 454005 454007 454009 454011 454013 454015 454017 454019 454021 454023 454025 454027 454029 454031 454033 454035 454037 454039 454041 454043 454045 454047 454049 454051 454053 454055 454057 454059 454061 454063 454065 454067 454069 454071 454073 454075 454077 454079 454081 454083 454085 454087 454089 454091 454093 454095" data-numbers="454001 454003 454005 454007 454009 454011 454013 454015 454017 454019 454021 454023 454025 454027 454029 454031 454033 454035 454037 454039 454041 454043 454045 454047 454049 454051 454053 454055 454057 454059 454061 454063 454065 454067 454069 454071 454073 454075 454077 454079 454081 454083 454085 454087 454089 454091 454093 454095"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4540xx</span><span class="train-sep"></span><span class="train-route">Zduńska Wola Karsznice - Dionizów</span></a><a href="export/TME_4640xx.html" class="train-item" data-search="TME 4640xx | KATOWICE MUCHOWIEC STASZIC - Myszków 464000 464002 464004 464006 464008 464010 464012 464014 464016 464018 464020 464022 464024 464026 464028 464030 464032 464034 464036 464038 464040 464042 464044 464046" data-numbers="464000 464002 464004 464006 464008 464010 464012 464014 464016 464018 464020 464022 464024 464026 464028 464030 464032 464034 464036 464038 464040 464042 464044 464046"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4640xx</span><span class="train-sep"></span><span class="train-route">KATOWICE MUCHOWIEC STASZIC - Myszków</span></a><a href="export/TME_4847xx.html" class="train-item" data-search="TME 4847xx | Dąbrowa Górnicza Towarowa - Myszków 484713 484715 484717 484719 484721 484723 484725 484727 484729 484731 484733 484735 484737 484739 484741 484743 484745 484747 484749 484751 484753 484755 484757 484759" data-numbers="484713 484715 484717 484719 484721 484723 484725 484727 484729 484731 484733 484735 484737 484739 484741 484743 484745 484747 484749 484751 484753 484755 484757 484759"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">4847xx</span><span class="train-sep"></span><span class="train-route">Dąbrowa Górnicza Towarowa - Myszków</span></a><a href="export/TME_5140xx.html" class="train-item" data-search="TME 5140xx | Dionizów - Warszawa Główna Towarowa 514000 514002 514004 514006 514008 514010 514012 514014 514016 514018 514020 514022 514024 514026 514028 514030 514032 514034 514036 514038 514040 514042 514044 514046" data-numbers="514000 514002 514004 514006 514008 514010 514012 514014 514016 514018 514020 514022 514024 514026 514028 514030 514032 514034 514036 514038 514040 514042 514044 514046"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">5140xx</span><span class="train-sep"></span><span class="train-route">Dionizów - Warszawa Główna Towarowa</span></a><a href="export/TME_5440xx.html" class="train-item" data-search="TME 5440xx | Dionizów -  Zduńska Wola Karsznice 544000 544002 544004 544006 544008 544010 544012 544014 544016 544018 544020 544022 544024 544026 544028 544030 544032 544034 544036 544038 544040 544042 544044 544046 544048 544050 544052 544054 544056 544058 544060 544062 544064 544066 544068 544070 544072 544074 544076 544078 544080 544082 544084 544086 544088 544090 544092 544094" data-numbers="544000 544002 544004 544006 544008 544010 544012 544014 544016 544018 544020 544022 544024 544026 544028 544030 544032 544034 544036 544038 544040 544042 544044 544046 544048 544050 544052 544054 544056 544058 544060 544062 544064 544066 544068 544070 544072 544074 544076 544078 544080 544082 544084 544086 544088 544090 544092 544094"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">5440xx</span><span class="train-sep"></span><span class="train-route">Dionizów -  Zduńska Wola Karsznice</span></a><a href="export/TME_6140xx.html" class="train-item" data-search="TME 6140xx | Rozprza - Warszawa Główna Towarowa 614000 614002 614004 614006 614008 614010 614012 614014 614016 614018 614020 614022 614024 614026 614028 614030 614032 614034 614036 614038 614040 614042 614044 614046" data-numbers="614000 614002 614004 614006 614008 614010 614012 614014 614016 614018 614020 614022 614024 614026 614028 614030 614032 614034 614036 614038 614040 614042 614044 614046"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">6140xx</span><span class="train-sep"></span><span class="train-route">Rozprza - Warszawa Główna Towarowa</span></a><a href="export/TME_8448xx.html" class="train-item" data-search="TME 8448xx | Myszków - Dąbrowa Górnicza Towarowa 844800 844802 844804 844806 844808 844810 844812 844814 844816 844818 844820 844822 844824 844826 844828 844830 844832 844834 844836 844838 844840 844842 844844 844846" data-numbers="844800 844802 844804 844806 844808 844810 844812 844814 844816 844818 844820 844822 844824 844826 844828 844830 844832 844834 844836 844838 844840 844842 844844 844846"><span class="cat-badge" style="background-color: #008080; color: #ffffff;">TME</span><span class="train-num">8448xx</span><span class="train-sep"></span><span class="train-route">Myszków - Dąbrowa Górnicza Towarowa</span></a></div><div class="category-group"><div class="category-header"><span>TNE • TNS</span></div><a href="export/TNE_1431xx.html" class="train-item" data-search="TNE 1431xx | Mikołajów - Dąbrowa Górnicza Towarowa 143101 143103 143105 143107 143109 143111 143113 143115 143117 143119 143121 143123 143125 143127 143129 143131 143133 143135 143137 143139 143141 143143 143145 143147" data-numbers="143101 143103 143105 143107 143109 143111 143113 143115 143117 143119 143121 143123 143125 143127 143129 143131 143133 143135 143137 143139 143141 143143 143145 143147"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">1431xx</span><span class="train-sep"></span><span class="train-route">Mikołajów - Dąbrowa Górnicza Towarowa</span></a><a href="export/TNE_1930xx.html" class="train-item" data-search="TNE 1930xx | Zgierz Kontrewers - Mikołajów 193001 193003 193005 193007 193009 193011 193013 193015 193017 193019 193021 193023" data-numbers="193001 193003 193005 193007 193009 193011 193013 193015 193017 193019 193021 193023"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">1930xx</span><span class="train-sep"></span><span class="train-route">Zgierz Kontrewers - Mikołajów</span></a><a href="export/TNE_2430xx.html" class="train-item" data-search="TNE 2430xx | Sędziszów - Jaworzno Szczakowa 243007 243009 243011 243013 243015 243017 243019 243021 243023 243025 243027 243029" data-numbers="243007 243009 243011 243013 243015 243017 243019 243021 243023 243025 243027 243029"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">2430xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Jaworzno Szczakowa</span></a><a href="export/TNE_3232xx.html" class="train-item" data-search="TNE 3232xx | Kraków Olsza - Sędziszów 323224" data-numbers="323224"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">3232xx</span><span class="train-sep"></span><span class="train-route">Kraków Olsza - Sędziszów</span></a><a href="export/TNE_4230xx.html" class="train-item" data-search="TNE 4230xx | Sosnowiec Maczki - Sędziszów 423000 423002 423004 423006 423008 423010 423012 423014" data-numbers="423000 423002 423004 423006 423008 423010 423012 423014"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">4230xx</span><span class="train-sep"></span><span class="train-route">Sosnowiec Maczki - Sędziszów</span></a><a href="export/TNE_4435xx.html" class="train-item" data-search="TNE 4435xx | Katowice - Mysłowice 443500 443502 443504 443506 443508 443510 443512 443514 443516 443518 443520 443522 443524 443526 443528 443530 443532 443534 443536 443538 443540 443542 443544 443546" data-numbers="443500 443502 443504 443506 443508 443510 443512 443514 443516 443518 443520 443522 443524 443526 443528 443530 443532 443534 443536 443538 443540 443542 443544 443546"><span class="cat-badge" style="background-color: #FF7F7F; color: #000000;">TNE</span><span class="train-num">4435xx</span><span class="train-sep"></span><span class="train-route">Katowice - Mysłowice</span></a></div><div class="category-group"><div class="category-header"><span>TKP • TKE • TKS</span></div><a href="export/TKE_4431xx.html" class="train-item" data-search="TKE 4431xx | KATOWICE MUCHOWIEC STASZIC - Dąbrowa Górnicza Towarowa 443100 443102 443104 443106 443108 443110 443112 443114 443116 443118 443120 443122" data-numbers="443100 443102 443104 443106 443108 443110 443112 443114 443116 443118 443120 443122"><span class="cat-badge" style="background-color: #FFFF00; color: #000000;">TKE</span><span class="train-num">4431xx</span><span class="train-sep"></span><span class="train-route">KATOWICE MUCHOWIEC STASZIC - Dąbrowa Górnicza Towarowa</span></a><a href="export/TKE_4432xx_S.html" class="train-item" data-search="TKE 4432xx | KATOWICE MUCHOWIEC STASZIC - Mysłowice 443200 443202 443204 443206 443208 443210 443212 443214 443216 443218 443220 443222" data-numbers="443200 443202 443204 443206 443208 443210 443212 443214 443216 443218 443220 443222"><span class="cat-badge" style="background-color: #FFFF00; color: #000000;">TKE</span><span class="train-num">4432xx</span><span class="train-sep"></span><span class="train-route">KATOWICE MUCHOWIEC STASZIC - Mysłowice</span></a><a href="export/TKE_4432xx_L.html" class="train-item" data-search="TKE 4432xx | Dąbrowa Górnicza Towarowa - Staszic 443201 443203 443205 443207 443209 443211 443213 443215 443217 443219 443221 443223" data-numbers="443201 443203 443205 443207 443209 443211 443213 443215 443217 443219 443221 443223"><span class="cat-badge" style="background-color: #FFFF00; color: #000000;">TKE</span><span class="train-num">4432xx</span><span class="train-sep"></span><span class="train-route">Dąbrowa Górnicza Towarowa - Staszic</span></a><a href="export/TKP_4432xx.html" class="train-item" data-search="TKP 4432xx | KATOWICE MUCHOWIEC STASZIC - Mysłowice 443208 443210 443212 443214 443216" data-numbers="443208 443210 443212 443214 443216"><span class="cat-badge" style="background-color: #FFFF00; color: #000000;">TKP</span><span class="train-num">4432xx</span><span class="train-sep"></span><span class="train-route">KATOWICE MUCHOWIEC STASZIC - Mysłowice</span></a></div><div class="category-group"><div class="category-header"><span>LPP • LPE • LPS</span></div><a href="export/LPE_1160xx_S.html" class="train-item" data-search="LPE 1160xx | Bełchów - Mikołajów 116000 116002 116004 116006 116008 116010" data-numbers="116000 116002 116004 116006 116008 116010"><span class="cat-badge" style="background-color: #E649FF; color: #ffffff;">LPE</span><span class="train-num">1160xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Mikołajów</span></a><a href="export/LPE_1160xx_L.html" class="train-item" data-search="LPE 1160xx | Mikołajów - Bełchów 116051 116053 116055 116057" data-numbers="116051 116053 116055 116057"><span class="cat-badge" style="background-color: #E649FF; color: #ffffff;">LPE</span><span class="train-num">1160xx</span><span class="train-sep"></span><span class="train-route">Mikołajów - Bełchów</span></a></div><div class="category-group"><div class="category-header"><span>LTP • LTE • LTS</span></div><a href="export/LTE_1150xx_L.html" class="train-item" data-search="LTE 1150xx | Mikołajów - Bełchów 115001 115003 115005 115007 115009 115011 115013 115015 115017 115019 115021 115023 115025 115027 115029 115031 115033 115035 115037" data-numbers="115001 115003 115005 115007 115009 115011 115013 115015 115017 115019 115021 115023 115025 115027 115029 115031 115033 115035 115037"><span class="cat-badge" style="background-color: #B200FF; color: #FFFFFF;">LTE</span><span class="train-num">1150xx</span><span class="train-sep"></span><span class="train-route">Mikołajów - Bełchów</span></a><a href="export/LTE_1150xx_S.html" class="train-item" data-search="LTE 1150xx | Bełchów - Mikołajów 115020 115022 115024 115026 115028 115030 115032 115034 115036 115038 115040 115042 115044 115046 115048 115050 115052 115054" data-numbers="115020 115022 115024 115026 115028 115030 115032 115034 115036 115038 115040 115042 115044 115046 115048 115050 115052 115054"><span class="cat-badge" style="background-color: #B200FF; color: #FFFFFF;">LTE</span><span class="train-num">1150xx</span><span class="train-sep"></span><span class="train-route">Bełchów - Mikołajów</span></a><a href="export/LTE_2450xx.html" class="train-item" data-search="LTE 2450xx | Sędziszów - Jaworzno Szczakowa 245001 245003 245005" data-numbers="245001 245003 245005"><span class="cat-badge" style="background-color: #B200FF; color: #FFFFFF;">LTE</span><span class="train-num">2450xx</span><span class="train-sep"></span><span class="train-route">Sędziszów - Jaworzno Szczakowa</span></a><a href="export/LTE_4250xx.html" class="train-item" data-search="LTE 4250xx | Jaworzno Szczakowa - Sędziszów 425000 425002 425004 425006 425008 425010 425012 425014" data-numbers="425000 425002 425004 425006 425008 425010 425012 425014"><span class="cat-badge" style="background-color: #B200FF; color: #FFFFFF;">LTE</span><span class="train-num">4250xx</span><span class="train-sep"></span><span class="train-route">Jaworzno Szczakowa - Sędziszów</span></a><a href="export/LTE_4455xx.html" class="train-item" data-search="LTE 4455xx | Jaworzno Szczakowa - Myszków 445510 445512 445514 445516 445518 445520 445522 445524 445526 445528 445530 445532 445534 445536 445538 445540 445542 445544 445546 445548 445550 445552 445554 445556" data-numbers="445510 445512 445514 445516 445518 445520 445522 445524 445526 445528 445530 445532 445534 445536 445538 445540 445542 445544 445546 445548 445550 445552 445554 445556"><span class="cat-badge" style="background-color: #B200FF; color: #FFFFFF;">LTE</span><span class="train-num">4455xx</span><span class="train-sep"></span><span class="train-route">Jaworzno Szczakowa - Myszków</span></a></div><div class="category-group"><div class="category-header"><span>ZNE • ZNJ • ZNS • ZNM</span></div><a href="export/ZNE_6290xx.html" class="train-item" data-search="ZNE 6290xx | Katowice - Knapówka 629070 629072 629074 629076 629078 629080 629082 629084 629086 629088 629090 629092" data-numbers="629070 629072 629074 629076 629078 629080 629082 629084 629086 629088 629090 629092"><span class="cat-badge" style="background-color: #F9FFFC; color: #808080;">ZNE</span><span class="train-num">6290xx</span><span class="train-sep"></span><span class="train-route">Katowice - Knapówka</span></a></div><div class="category-group"><div class="category-header"><span>ZUE • ZUS • ZUM</span></div><a href="export/ZUE_6490xx.html" class="train-item" data-search="ZUE 6490xx | Katowice - Myszków 649050 649052 649054 649056 649058 649060 649062 649064 649066 649068 649070 649072" data-numbers="649050 649052 649054 649056 649058 649060 649062 649064 649066 649068 649070 649072"><span class="cat-badge" style="background-color: #F9FFFC; color: #FF7F7F;">ZUE</span><span class="train-num">6490xx</span><span class="train-sep"></span><span class="train-route">Katowice - Myszków</span></a></div></div>
                 <div class="no-results hidden" id="no-nakladni">No results found.</div>
             </div>
         </div>
@@ -505,11 +302,11 @@ def generate_index():
 
     <script>
         /* ── INFO PANEL ──────────────────────────────────────────── */
-        const ICONS = {{ info: 'ℹ️', warning: '⚠️', update: '✅' }};
+        const ICONS = { info: 'ℹ️', warning: '⚠️', update: '✅' };
 
         fetch('info.json')
             .then(r => r.json())
-            .then(data => {{
+            .then(data => {
                 if (!data.messages || data.messages.length === 0) return;
                 const panel = document.getElementById('info-panel');
                 panel.innerHTML =
@@ -519,99 +316,81 @@ def generate_index():
                         <div class="info-panel-line"></div>
                     </div>
                     <div class="info-grid">
-                        ${{data.messages.map(m => {{
+                        ${data.messages.map(m => {
                             const type = m.type || 'info';
                             const icon = ICONS[type] || 'ℹ️';
-                            const dateHtml = m.date ? `<div class="info-msg-date">📅 ${{m.date}}</div>` : '';
-                            return `<div class="info-msg ${{type !== 'info' ? type : ''}}">
-                                <span class="info-msg-icon">${{icon}}</span>
+                            const dateHtml = m.date ? `<div class="info-msg-date">📅 ${m.date}</div>` : '';
+                            return `<div class="info-msg ${type !== 'info' ? type : ''}">
+                                <span class="info-msg-icon">${icon}</span>
                                 <div class="info-msg-body">
-                                    <div class="info-msg-text">${{m.text}}</div>
-                                    ${{dateHtml}}
+                                    <div class="info-msg-text">${m.text}</div>
+                                    ${dateHtml}
                                 </div>
                             </div>`;
-                        }}).join('')}}
+                        }).join('')}
                     </div>`;
-            }})
-            .catch(() => {{}});
+            })
+            .catch(() => {});
 
         /* ── DARK MODE ───────────────────────────────────────────── */
         const btn = document.getElementById('theme-toggle');
-        const applyTheme = (dark) => {{
+        const applyTheme = (dark) => {
             document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
             btn.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode';
-        }};
+        };
         applyTheme(localStorage.getItem('theme') === 'dark');
-        btn.onclick = () => {{
+        btn.onclick = () => {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             localStorage.setItem('theme', isDark ? 'light' : 'dark');
             applyTheme(!isDark);
-        }};
+        };
 
         /* ── VYHLEDÁVÁNÍ ─────────────────────────────────────────── */
-        function filterTrains() {{
+        function filterTrains() {
             const input = document.getElementById('searchInput').value.toLowerCase().trim();
             const parts = input ? input.split(',').map(p => p.trim()).filter(p => p) : [];
             let totalVisible = 0;
 
-            ['osobniList', 'nakladniList'].forEach((listId, idx) => {{
+            ['osobniList', 'nakladniList'].forEach((listId, idx) => {
                 const list = document.getElementById(listId);
                 const noRes = document.getElementById(idx === 0 ? 'no-osobni' : 'no-nakladni');
                 const groups = list.getElementsByClassName('category-group');
                 let colVisible = 0;
 
-                for (const g of groups) {{
+                for (const g of groups) {
                     const items = g.getElementsByClassName('train-item');
                     let anyVisible = false;
-                    for (const item of items) {{
+                    for (const item of items) {
                         const content = item.getAttribute('data-search').toLowerCase();
-                        const show = parts.length === 0 || parts.some(term => {{
+                        const show = parts.length === 0 || parts.some(term => {
                             // Přímé vyhledávání v celém textu včetně čísel
                             if (content.indexOf(term) !== -1) return true;
                             // Vyhledávání podle čísla vlaku (přesná shoda v číselné řadě)
                             const nums = (item.getAttribute('data-numbers') || '').split(' ');
                             return nums.includes(term);
-                        }});
+                        });
                         item.classList.toggle('hidden', !show);
-                        if (show) {{ anyVisible = true; colVisible++; totalVisible++; }}
-                    }}
+                        if (show) { anyVisible = true; colVisible++; totalVisible++; }
+                    }
                     g.classList.toggle('hidden', !anyVisible);
-                }}
+                }
 
                 noRes.classList.toggle('hidden', colVisible > 0 || parts.length === 0);
-            }});
+            });
 
             const countEl = document.getElementById('search-result-count');
-            if (parts.length === 0) {{
+            if (parts.length === 0) {
                 countEl.textContent = '';
-            }} else {{
+            } else {
                 countEl.textContent = totalVisible === 0
                     ? 'No timetables found.'
-                    : `Found ${{totalVisible}} timetable${{totalVisible !== 1 ? 's' : ''}}.`;
-            }}
-        }}
+                    : `Found ${totalVisible} timetable${totalVisible !== 1 ? 's' : ''}.`;
+            }
+        }
     </script>
 
     <footer class="site-footer">
-        &copy; {today.year} <strong>TheFloxiCz</strong> &nbsp;·&nbsp; Last update: {today.strftime('%d. %m. %Y')} &nbsp;·&nbsp; Version 1.0
+        &copy; 2026 <strong>TheFloxiCz</strong> &nbsp;·&nbsp; Last update: 17. 06. 2026 &nbsp;·&nbsp; Version 1.0
     </footer>
 </body>
 </html>
-"""
-
-    with open('index.html', 'w', encoding='utf-8') as f:
-        f.write(html)
-
-    print()
-    print(SEP)
-    if uncategorized:
-        print(f"  ✓  index.html byl vygenerován  –  ale {len(uncategorized)} jízdní řád(y) chybí!")
-        print(f"     Zkontroluj kategorie uvedené výše a doplň je do PRIORITY_OSOBNI / PRIORITY_NAKLADNI.")
-    else:
-        print("  ✓  index.html byl vygenerován úspěšně, vše v pořádku.")
-    print(SEP)
-    print()
-    input("  Stiskni Enter pro zavření okna...")
-
-if __name__ == "__main__":
-    generate_index()

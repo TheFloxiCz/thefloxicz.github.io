@@ -965,7 +965,7 @@
     <div class="cmd-card px-border">
       <div>
         <div class="cmd-name">/melon quests</div>
-        <div class="cmd-desc">Zobrazí tvoje aktuální <em>týdenní questy</em> a progres jejich plnění. Odměna za splnění všech tří úkolů jsou <em class="gem-color">2 💎 gemy</em>. Questy se resetují každé pondělí v 00:00.</div>
+        <div class="cmd-desc">Zobrazí tvoje aktuální <em>týdenní questy</em> a progres jejich plnění. Za splnění všech tří běžných questů získáš <em class="gem-color">2 💎 gemy</em>, za bonusový quest pak navíc <em class="gem-color">1 💎 gem</em> (vyplacen až po splnění běžných). Questy se resetují každé pondělí v 00:00.</div>
       </div>
       <span class="perm-badge perm-user">👤 Všichni</span>
     </div>
@@ -1050,7 +1050,7 @@
     </div>
     <div class="step">
       <div class="step-title">TÝDENNÍ QUESTY A GEMY</div>
-      <p>Každý týden dostaneš 3 náhodné questy — za splnění všech tří získáš <em class="gem-color">2 💎 gemy</em>. Gemy lze použít jako alternativní platbu za perky místo mincí. Progres questů a odměny si kontroluj přes <em>/melon quests</em>.</p>
+      <p>Každý týden dostaneš 3 běžné questy + 1 bonusový quest. Za splnění všech tří běžných získáš <em class="gem-color">2 💎 gemy</em>, za bonusový navíc <em class="gem-color">1 💎 gem</em> — ale až po splnění běžných. Gemy lze použít jako alternativní platbu za perky místo mincí. Progres questů a odměny si kontroluj přes <em>/melon quests</em>.</p>
     </div>
   </div>
 
@@ -1540,7 +1540,7 @@
       <div class="gem-section px-border" style="margin-bottom:0;">
         <div class="gem-title">💎 GEMY — PRÉMIOVÁ MĚNA</div>
         <ul style="font-family:var(--mono); font-size:17px; color:var(--text); line-height:1.7; padding-left:20px;">
-          <li>📋 <em class="gem-color">Týdenní questy</em> — splň všechny 3 a získej 2 💎 gemy</li>
+          <li>📋 <em class="gem-color">Týdenní questy</em> — splň všechny 3 běžné a získej 2 💎 gemy; za bonusový quest pak +1 💎 gem (až po splnění běžných)</li>
           <li>🍉 <em class="gem-color">Sklizeň</em> — účastní na sklizni máš 15% šanci získat 1 💎 gem</li>
           <li>💎 Gemy jsou alternativní platbou za všechny perky</li>
           <li>🔒 Cena v gemech je vždy <em class="gem-color">pevná</em> bez ohledu na úroveň vylepšení</li>
@@ -1604,66 +1604,138 @@
   <div class="card px-border" style="margin-bottom:24px;">
     <div class="card-title">📋 JAK QUESTY FUNGUJÍ</div>
     <p>
-      Každý hráč dostane každý týden <em>3 náhodné questy</em>. Questy jsou unikátní pro každý server a resetují se každé <em>pondělí 00:00 (pražský čas)</em>.
-      Za splnění <em>všech tří</em> questů v daném týdnu získáš odměnu <em class="gem-color">2 💎 gemů</em>.
+      Každý hráč dostane každý týden <em>3 náhodné běžné questy</em> + <em>1 bonusový quest</em>. Questy jsou unikátní pro každý server a resetují se každé <em>pondělí 00:00 (pražský čas)</em>.
+      Za splnění <em>všech tří běžných</em> questů v daném týdnu získáš odměnu <em class="gem-color">2 💎 gemy</em>.
+      Bonusový quest lze plnit průběžně kdykoliv během týdne, ale jeho odměnu (<em class="gem-color">1 💎 gem</em>) dostaneš až ve chvíli, kdy jsou zároveň splněné všechny tři běžné questy.
       Progres a zbývající čas do resetu si zobrazíš přes <em>/melon quests</em>.
     </p>
   </div>
 
   <div class="card px-border" style="margin-bottom:16px;">
-    <div class="card-title">🎲 TYPY QUESTŮ — PŘEHLED</div>
+    <div class="card-title">🎲 BĚŽNÉ QUESTY — PŘEHLED</div>
     <div class="stages-list" style="gap:3px;">
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
-        <span class="stage-emoji" style="font-size:20px;">🍉</span>
-        <span class="stage-name">Nasbírej X ks při sklizni</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">10–25 ks</span>
+        <span class="stage-emoji" style="font-size:20px;">🚜</span>
+        <span class="stage-name">Nasbírej X ks při sklizni (jakákoliv plodina)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">10–35 ks</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">💧</span>
         <span class="stage-name">Zalij rostlinu X-krát</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">7–25×</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">25–40×</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🌿</span>
         <span class="stage-name">Vytrhej X ks plevele</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">40–120 ks</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">65–135 ks</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🐌</span>
         <span class="stage-name">Pochytej X slimáků</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">70–150 ks</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">70–140 ks</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🌱</span>
         <span class="stage-name">Účastni se sklizně [plodiny]</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">1-2×</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1–3×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🌱</span>
+        <span class="stage-name">Zasaď plodinu [název] X-krát</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1–2×</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🍈</span>
         <span class="stage-name">Nasbírej X ks [konkrétní plodiny]</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">3–20 ks</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">7–21 ks</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">⚖️</span>
+        <span class="stage-name">Účastni se sklizně s váhou minimálně X kg</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">5,5–7,5 kg</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">✨</span>
         <span class="stage-name">Zakup jakýkoliv perk</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">1-2×</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1–3×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">✨</span>
+        <span class="stage-name">Zakup perk [konkrétní]</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1–3×</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🪙</span>
-        <span class="stage-name">Investuj X 🪙 do vylepšení</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">200–500 🪙</span>
+        <span class="stage-name">Investuj X 🪙 do vylepšení (libovolné)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">400–600 🪙</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🔧</span>
+        <span class="stage-name">Investuj X 🪙 do vylepšení [konkrétní]</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">250–600 🪙</span>
       </div>
       <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
         <span class="stage-emoji" style="font-size:20px;">🪙</span>
         <span class="stage-name">Vydělej X 🪙</span>
-        <span class="warn" style="font-family:var(--mono); font-size:16px;">200–500 🪙</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">400–600 🪙</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">💎</span>
+        <span class="stage-name">Získej X 💎 za sklizně</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1–2 💎</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card px-border" style="margin-bottom:16px;">
+    <div class="card-title">⭐ BONUSOVÝ QUEST</div>
+    <p style="margin-bottom:12px;">
+      Každý týden dostaneš navíc <em>1 bonusový quest</em> s odměnou <em class="gem-color">1 💎 gem</em>.
+      Bonusový quest lze plnit průběžně po celý týden — <strong>odměnu ale dostaneš až po splnění všech tří běžných questů</strong>.
+      Pokud bonusový quest splníš dříve, gem se automaticky přičte v momentě, kdy dokončíš i poslední běžný quest.
+    </p>
+    <div class="stages-list" style="gap:3px;">
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🐌</span>
+        <span class="stage-name">Buď nejlepší v chytání slimáků X× (za jedno pěstování)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">2–3×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">💧</span>
+        <span class="stage-name">Zalij nejvíce ze všech X× (za jedno pěstování)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">2–4×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🌿</span>
+        <span class="stage-name">Vytrhej nejvíce plevele X× (za jedno pěstování)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">2–3×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">💚</span>
+        <span class="stage-name">Oživ uschlou nebo mrtvou rostlinu</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">📅</span>
+        <span class="stage-name">Zalij rostlinu každý den alespoň 3× (X dní v řadě)</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">4–7 dní</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🟩</span>
+        <span class="stage-name">Účastni se sklizně čtvercového melounu</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">1×</span>
+      </div>
+      <div class="stage-row" style="grid-template-columns: 32px 1fr auto;">
+        <span class="stage-emoji" style="font-size:20px;">🌊</span>
+        <span class="stage-name">Zalij rostlinu X× za jediný den</span>
+        <span class="warn" style="font-family:var(--mono); font-size:16px;">15–20×</span>
       </div>
     </div>
   </div>
 
   <div class="tip-box gem-tip">
     <span class="tip-label">💎 ODMĚNA ZA QUESTY</span>
-    Za splnění všech 3 questů v jednom týdnu dostaneš <em class="gem-color">2 💎 gemy</em>. Gemy jsou jediná možnost, jak je získat — nejde je koupit za mince. Každý hráč má questy unikátní pro každý server, takže progres na různých serverech je oddělený.
+    Za splnění všech 3 běžných questů v jednom týdnu dostaneš <em class="gem-color">2 💎 gemy</em>. Za bonusový quest získáš navíc <em class="gem-color">1 💎 gem</em> — ale až tehdy, kdy jsou splněny i všechny tři běžné questy. Každý hráč má questy unikátní pro každý server, takže progres na různých serverech je oddělený.
   </div>
 </section>
 
@@ -1770,7 +1842,7 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Gemy získáš pouze splněním <em>všech tří týdenních questů</em>. Za kompletní sadu dostaneš 2 💎 gemy. Questy se resetují každé pondělí 00:00 pražského času. Také je lze získat účastní na sklizni. Máš 15 % šanci, že dostaneš 1 💎 gem. Gemy nelze koupit za mince — jde o prémiovou měnu za pravidelné hraní.
+        Gemy získáš splněním <em>všech tří týdenních běžných questů</em> (2 💎 gemy) a navíc 1 💎 gem za bonusový quest — ten se ale vyplatí až po splnění všech běžných. Questy se resetují každé pondělí 00:00 pražského času. Také je lze získat účastí na sklizni — máš 15 % šanci, že dostaneš 1 💎 gem. Gemy nelze koupit za mince — jde o prémiovou měnu za pravidelné hraní.
       </div>
     </div>
 
@@ -1780,7 +1852,7 @@
         <span class="faq-arrow">▼</span>
       </button>
       <div class="faq-a">
-        Každý hráč dostane na začátku týdne 3 náhodné questy z různých kategorií (sklizeň, zalévání, slimáci, plevel, ekonomika…). Progres se aktualizuje automaticky při hře. Přes <em>/melon quests</em> vidíš aktuální questy, jejich progres a zbývající čas do resetu. Za splnění všech tří dostaneš 2 💎.
+        Každý hráč dostane na začátku týdne 3 náhodné běžné questy + 1 bonusový quest z různých kategorií (sklizeň, zalévání, slimáci, plevel, ekonomika…). Progres se aktualizuje automaticky při hře. Přes <em>/melon quests</em> vidíš aktuální questy, jejich progres a zbývající čas do resetu. Za splnění všech tří běžných dostaneš 2 💎 gemy. Bonusový quest lze plnit kdykoliv, ale odměnu (1 💎 gem) dostaneš až po splnění všech tří běžných.
       </div>
     </div>
 

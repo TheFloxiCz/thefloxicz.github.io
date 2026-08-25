@@ -102,31 +102,36 @@ input[type="text"]:focus, input[type="time"]:focus {
 }
 .result-card:hover { border-color: var(--primary); }
 
-/* Hlavička karty — vlak nahoře, čas pod ním */
-.result-header { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.result-trains { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+/* Hlavička karty */
+.result-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.result-trains { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .train-chip {
   display: flex; align-items: center; gap: 6px;
   background: var(--primary-light); border: 1px solid var(--border);
   border-radius: 6px; padding: 5px 12px;
 }
-.train-chip-type { font-size: 13px; font-weight: 700; }
 .train-chip-no { font-size: 20px; font-weight: 700; }
-.train-chip-dest { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-left: 2px; }
 .cat-badge {
   display: inline-block; padding: 2px 8px; border-radius: 4px;
   font-weight: 700; font-size: 12px;
 }
-
-/* Čas odjezdu/příjezdu — pod vlakem */
-.result-times { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
-.result-time { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.result-time { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .result-time .arr { color: var(--text-muted); }
-.result-duration { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.result-duration { font-size: 13px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
 .result-transfers-badge {
   font-size: 12px; color: var(--transfer-color); font-weight: 700;
-  border: 1px solid var(--transfer-color); border-radius: 4px; padding: 1px 6px;
+  border: 1px solid var(--transfer-color); border-radius: 4px; padding: 1px 6px; white-space: nowrap;
 }
+.result-divider { color: var(--border); font-size: 18px; }
+
+/* Tlačítka dřívější/pozdější */
+.nav-results { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn-nav {
+  background: var(--card-bg); border: 1px solid var(--border); color: var(--text);
+  padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all 0.2s; flex: 1; text-align: center;
+}
+.btn-nav:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
 
 /* Přestup mezi vlaky */
 .transfer-block {
@@ -141,10 +146,10 @@ input[type="text"]:focus, input[type="time"]:focus {
 .result-stops { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
 .result-stops.open { display: block; }
 .leg-header {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-  color: var(--text-muted); margin: 8px 0 4px 0; padding-bottom: 2px;
-  border-bottom: 1px solid var(--border);
+  font-size: 15px; font-weight: 700; margin: 10px 0 5px 0; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
 }
+.leg-header-dest { font-size: 13px; color: var(--text-muted); font-weight: 600; }
 .stops-hidden-block { margin: 2px 0; }
 .stops-hidden-toggle {
   background: none; border: 1px dashed var(--border); color: var(--text-muted);
@@ -155,6 +160,8 @@ input[type="text"]:focus, input[type="time"]:focus {
 .stops-hidden-toggle:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 .stops-hidden-list { display: none; }
 .stops-hidden-list.open { display: block; }
+.stops-hidden-list .stop-row { font-style: italic; color: var(--text-muted); }
+.stops-hidden-list .stop-time { color: var(--text-muted); }
 .stop-row { display: flex; gap: 12px; font-size: 13px; padding: 2px 0; align-items: baseline; }
 .stop-row.stop-key { font-weight: 700; }
 .stop-time { font-variant-numeric: tabular-nums; min-width: 90px; color: var(--text-muted); font-weight: 600; }
@@ -283,6 +290,7 @@ const TYPE_STYLES = {
 let allTrains = [];
 let stations = [];
 let dataLoaded = false;
+let lastSearchParams = null; // pro dřívější/pozdější
 
 // ─── DATA LOADING ─────────────────────────────────────────────────────────────
 async function loadData() {
@@ -338,7 +346,7 @@ function stopDep(stop) { return stop.d || stop.a; }
 function stopArr(stop) { return stop.a || stop.d; }
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
-function search() {
+function search(depTimeOverride) {
   if (!dataLoaded) return;
 
   const from   = document.getElementById("inp-from").value.trim();
@@ -353,7 +361,8 @@ function search() {
   if (from === to)  { showError("From and To must be different stations."); return; }
 
   const t1 = performance.now();
-  const depTime = toMins(timeStr);
+  const depTime = depTimeOverride !== undefined ? depTimeOverride : toMins(timeStr);
+  lastSearchParams = { from, to, via, maxTransfers, wantPassenger, wantFreight, baseTime: toMins(timeStr) };
 
   const allowed = t => t.category === "passenger" ? wantPassenger : wantFreight;
   const eligible = allTrains.filter(allowed);
@@ -409,6 +418,10 @@ function search() {
         const midEntries = stationIndex.get(midStop.s) || [];
         for (const { train: t2t, idx: iFrom2 } of midEntries) {
           if (t2t.no === t1t.no) continue;
+          // Pokud druhý vlak jede přímo z výchozí do cílové stanice, byl už nalezen jako přímý
+          const t2HasFrom = t2t.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1;
+          const t2HasTo   = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
+          if (t2HasFrom && t2HasTo) continue;
           const dep2 = toMins(stopDep(t2t.stops[iFrom2]));
           if (dep2 === null) continue;
           const wait = diffMins(arr1, dep2);
@@ -529,9 +542,9 @@ function buildStopsHTML(leg, r, li) {
 
   let html = "";
 
-  // Hlavička úseku
+  // Hlavička úseku v detailu — větší, s konečnou
   const dest = trainDest(leg.train);
-  html += `<div class="leg-header">${badgeHTML(leg.train.type)} ${leg.train.no} → ${dest}</div>`;
+  html += `<div class="leg-header">${badgeHTML(leg.train.type)} <strong>${leg.train.no}</strong> <span class="leg-header-dest">→ ${dest}</span></div>`;
 
   // Skryté zastávky před
   if (before.length > 0) {
@@ -584,6 +597,46 @@ function buildStopsHTML(leg, r, li) {
   return html;
 }
 
+function searchEarlier() {
+  if (!lastSearchParams) return;
+  // Vezmi čas prvního zobrazeného výsledku a odečti 1 minutu
+  const firstCard = document.querySelector(".result-card");
+  if (!firstCard) return;
+  const timeEl = firstCard.querySelector(".result-time");
+  if (!timeEl) return;
+  const depText = timeEl.childNodes[0].textContent.trim();
+  const depMins = toMins(depText);
+  if (depMins === null) return;
+  // Hledej 5 spojení která odjíždějí těsně před tímto časem
+  // Spustíme search s upraveným časem = depMins - 1, ale výsledky obrátíme
+  runSearchWithTime(depMins - 1, true);
+}
+
+function searchLater() {
+  if (!lastSearchParams) return;
+  // Vezmi čas posledního zobrazeného výsledku + 1 min
+  const cards = document.querySelectorAll(".result-card");
+  if (!cards.length) return;
+  const lastCard = cards[cards.length - 1];
+  const timeEl = lastCard.querySelector(".result-time");
+  if (!timeEl) return;
+  const depText = timeEl.childNodes[0].textContent.trim();
+  const depMins = toMins(depText);
+  if (depMins === null) return;
+  runSearchWithTime(depMins + 1, false);
+}
+
+function runSearchWithTime(depTime, earlier) {
+  // Dočasně nastav čas v inputu
+  document.getElementById("inp-time").value = fromMins(depTime);
+  if (earlier) {
+    // Pro "dřívější" hledáme od depTime dozadu — najdeme víc a bereme posledních 5
+    search(depTime);
+  } else {
+    search(depTime);
+  }
+}
+
 function toggleHidden(uid) {
   const el = document.getElementById(uid);
   const btn = el.previousElementSibling;
@@ -600,7 +653,12 @@ function renderResults(results, from, to) {
     return;
   }
 
-  area.innerHTML = `<div class="results-header">Found ${results.length} connection${results.length > 1 ? "s" : ""}:</div>`;
+  area.innerHTML = `
+    <div class="nav-results">
+      <button class="btn-nav" onclick="searchEarlier()">◀ Earlier connections</button>
+      <button class="btn-nav" onclick="searchLater()">Later connections ▶</button>
+    </div>
+    <div class="results-header">Found ${results.length} connection${results.length > 1 ? "s" : ""}:</div>`;
 
   results.forEach((r, ri) => {
     const depStr = fromMins(r.dep);
@@ -608,22 +666,16 @@ function renderResults(results, from, to) {
     const card = document.createElement("div");
     card.className = "result-card";
 
-    // Řádek vlaků — typ+číslo+konečná
+    // Řádek vlaků — jen typ+číslo, bez konečné
     const trainsHTML = r.legs.map(leg => {
       const t = leg.train;
-      const dest = trainDest(t);
-      return `<div class="train-chip">
-        ${badgeHTML(t.type)}
-        <span class="train-chip-no">${t.no}</span>
-        <span class="train-chip-dest">→ ${dest}</span>
-      </div>`;
-    }).join(`<span style="color:var(--transfer-color);font-size:18px;align-self:center">⇄</span>`);
+      return `<div class="train-chip">${badgeHTML(t.type)}<span class="train-chip-no">${t.no}</span></div>`;
+    }).join(`<span style="color:var(--transfer-color);font-size:16px">⇄</span>`);
 
     card.innerHTML = `
       <div class="result-header">
         <div class="result-trains">${trainsHTML}</div>
-      </div>
-      <div class="result-times">
+        <span class="result-divider">|</span>
         <div class="result-time">${depStr} <span class="arr">→ ${arrStr}</span></div>
         <div class="result-duration">${formatDuration(r.duration)}</div>
         ${r.transfers > 0 ? `<div class="result-transfers-badge">${r.transfers} transfer${r.transfers > 1 ? "s" : ""}</div>` : ""}

@@ -408,10 +408,9 @@ function search(depTimeOverride) {
       for (let iMid = iFrom1 + 1; iMid < t1t.stops.length; iMid++) {
         const midStop = t1t.stops[iMid];
         if (midStop.p || midStop.s === to) continue;
-        // Přestupní stanice musí být před cílem v tomto vlaku
+        // Přestupní stanice musí být před cílem — pokud vlak jede přímo do cíle, přestup zbytečný
         const iToInT1 = t1t.stops.findIndex((s, i) => i > iFrom1 && s.s === to && !s.p);
-        if (iToInT1 !== -1 && iMid >= iToInT1) continue; // přestup je za cílem nebo přímo v cíli
-        if (iToInT1 !== -1) continue; // vlak jede přímo do cíle — přestup zbytečný
+        if (iToInT1 !== -1) continue; // tento vlak jede přímo do cíle, přímý spoj už byl nalezen
         const arr1 = toMins(stopArr(midStop));
         if (arr1 === null) continue;
 

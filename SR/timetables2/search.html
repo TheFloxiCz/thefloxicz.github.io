@@ -400,34 +400,28 @@ function search(depTimeOverride) {
   }
 
   // ── PŘESTUPNÍ SPOJE ──
-  // Sada přímých vlaků (čísla) — přestupní vlak který jede přímo from→to je zbytečný
-  const directTrainNos = new Set(results.map(r => r.legs[0].train.no));
-
   if (maxTransfers > 0) {
     for (const { train: t1t, idx: iFrom1 } of fromEntries) {
       const dep1 = toMins(stopDep(t1t.stops[iFrom1]));
       if (dep1 === null || diffMins(depTime, dep1) > 1439) continue;
 
-      // Pokud tento vlak jede přímo do cíle, přeskočíme ho v přestupní smyčce
-      const t1GoesToDest = t1t.stops.findIndex((s, i) => i > iFrom1 && s.s === to && !s.p) !== -1;
-      if (t1GoesToDest) continue;
-
       for (let iMid = iFrom1 + 1; iMid < t1t.stops.length; iMid++) {
         const midStop = t1t.stops[iMid];
         if (midStop.p || midStop.s === to) continue;
+        // Přestupní stanice musí být před cílem v tomto vlaku
+        const iToInT1 = t1t.stops.findIndex((s, i) => i > iFrom1 && s.s === to && !s.p);
+        if (iToInT1 !== -1 && iMid >= iToInT1) continue; // přestup je za cílem nebo přímo v cíli
+        if (iToInT1 !== -1) continue; // vlak jede přímo do cíle — přestup zbytečný
         const arr1 = toMins(stopArr(midStop));
         if (arr1 === null) continue;
 
         const midEntries = stationIndex.get(midStop.s) || [];
         for (const { train: t2t, idx: iFrom2 } of midEntries) {
           if (t2t.no === t1t.no) continue;
-          // Druhý vlak jede přímo z from do to — zbytečný přestup
-          if (directTrainNos.has(t2t.no)) continue;
-          // Druhý vlak nastupujeme uprostřed, ale jede i z from — zbytečný přestup
-          const t2FromFrom = t2t.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1;
-          const t2ToTo     = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
-          if (t2FromFrom && t2ToTo) continue;
-
+          // Pokud druhý vlak jede přímo z výchozí do cílové stanice, byl už nalezen jako přímý
+          const t2HasFrom = t2t.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1;
+          const t2HasTo   = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
+          if (t2HasFrom && t2HasTo) continue;
           const dep2 = toMins(stopDep(t2t.stops[iFrom2]));
           if (dep2 === null) continue;
           const wait = diffMins(arr1, dep2);
@@ -454,8 +448,8 @@ function search(depTimeOverride) {
             for (let iMid2 = iFrom2 + 1; iMid2 < t2t.stops.length; iMid2++) {
               const midStop2 = t2t.stops[iMid2];
               if (midStop2.p || midStop2.s === to) continue;
-              // Vlak č.2 jede přímo do cíle — třetí vlak zbytečný
-              const t2GoesToDest = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p) !== -1;
+              // Pokud vlak č. 2 pokračuje až do cíle, třetí vlak není potřeba
+              const t2GoesToDest = t2t.stops.findIndex((s, i) => i > iMid2 && s.s === to && !s.p) !== -1;
               if (t2GoesToDest) continue;
               const arr2m = toMins(stopArr(midStop2));
               if (arr2m === null) continue;

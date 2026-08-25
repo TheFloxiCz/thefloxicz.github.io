@@ -184,7 +184,7 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
       </div>
       <div class="field">
         <label>Departure from</label>
-        <input type="time" id="inp-time" value="00:00">
+        <input type="time" id="inp-time">
       </div>
       <div class="field-transfers">
         <label>Max transfers</label>
@@ -192,8 +192,7 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
           <option value="0">Direct only</option>
           <option value="1">Max 1</option>
           <option value="2" selected>Max 2</option>
-          <option value="3">Max 3</option>
-          <option value="5">Max 5</option>
+
         </select>
       </div>
     </div>
@@ -257,9 +256,11 @@ let dataLoaded = false;
 // ─── DATA LOADING ─────────────────────────────────────────────────────────────
 async function loadData() {
   try {
+    const t0 = performance.now();
     const res = await fetch(SEARCH_JSON_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     allTrains = await res.json();
+    console.log(`[Search] Načtení JSON: ${(performance.now()-t0).toFixed(0)} ms, ${allTrains.length} vlaků`);
     // Sestav seznam unikátních stanic ze zastávek
     const stationSet = new Set();
     for (const train of allTrains) {
@@ -317,157 +318,144 @@ function search() {
   const wantPassenger = document.getElementById("chk-passenger").checked;
   const wantFreight   = document.getElementById("chk-freight").checked;
 
-  if (!from || !to) {
-    showError("Please fill in From and To fields.");
-    return;
-  }
-  if (from === to) {
-    showError("From and To must be different stations.");
-    return;
-  }
+  if (!from || !to) { showError("Please fill in From and To fields."); return; }
+  if (from === to)  { showError("From and To must be different stations."); return; }
 
+  const t1 = performance.now();
   const depTime = toMins(timeStr);
 
-  // Filtr vlaků dle kategorie
-  const allowed = t => {
-    if (t.category === "passenger") return wantPassenger;
-    return wantFreight; // freight + other
-  };
+  const allowed = t => t.category === "passenger" ? wantPassenger : wantFreight;
+  const eligible = allTrains.filter(allowed);
 
-  const eligibleTrains = allTrains.filter(allowed);
-
-  // ── PŘÍMÉ SPOJE ──
-  const directResults = [];
-  for (const train of eligibleTrains) {
-    const idxFrom = stopIndex(train, from);
-    const idxTo   = stopIndex(train, to);
-    if (idxFrom === -1 || idxTo === -1) continue;
-    if (idxFrom >= idxTo) continue; // špatný směr
-
-    // Via check
-    if (via) {
-      const idxVia = stopIndex(train, via);
-      if (idxVia === -1 || idxVia <= idxFrom || idxVia >= idxTo) continue;
+  // Index: stanice → [{train, idx}] — jen zastávky kde vlak stojí (ne průjezd)
+  const stationIndex = new Map();
+  for (const train of eligible) {
+    for (let i = 0; i < train.stops.length; i++) {
+      if (train.stops[i].p) continue;
+      const st = train.stops[i].s;
+      if (!stationIndex.has(st)) stationIndex.set(st, []);
+      stationIndex.get(st).push({ train, idx: i });
     }
-
-    const depStop = train.stops[idxFrom];
-    const arrStop = train.stops[idxTo];
-    const dep = toMins(stopDep(depStop));
-    const arr = toMins(stopArr(arrStop));
-    if (dep === null || arr === null) continue;
-    if (diffMins(depTime, dep) > 1439) continue; // ve stejném dni nebo druhý den
-
-    directResults.push({
-      legs: [{ train, from: idxFrom, to: idxTo }],
-      dep, arr,
-      duration: diffMins(dep, arr),
-      transfers: 0,
-    });
   }
 
-  // ── PŘESTUPNÍ SPOJE (BFS do maxTransfers úrovní) ──
-  let transferResults = [];
+  const results = [];
 
-  if (maxTransfers > 0) {
-    // Indexy: zastávka → vlaky které tam staví
-    const stationTrains = new Map();
-    for (const train of eligibleTrains) {
-      for (let i = 0; i < train.stops.length; i++) {
-        const st = train.stops[i].s;
-        if (!stationTrains.has(st)) stationTrains.set(st, []);
-        stationTrains.get(st).push({ train, idx: i });
-      }
+  // ── PŘÍMÉ SPOJE ──
+  const fromEntries = stationIndex.get(from) || [];
+  for (const { train, idx: iFrom } of fromEntries) {
+    const iTo = train.stops.findIndex((s, i) => i > iFrom && s.s === to && !s.p);
+    if (iTo === -1) continue;
+
+    if (via) {
+      const iVia = train.stops.findIndex((s, i) => i > iFrom && i < iTo && s.s === via);
+      if (iVia === -1) continue;
     }
 
-    // Iterativní prohledávání — každý „stav" je: (trainIdxUsed, transferStations[], depTime, legs[])
-    // Začínáme z `from` se všemi vlaky odtud
-    function bfs(currentFrom, currentDepTime, legs, usedTrainNos, depth) {
-      if (depth > maxTransfers) return;
-      const entries = stationTrains.get(currentFrom) || [];
-      for (const { train, idx: idxFrom } of entries) {
-        if (usedTrainNos.has(train.no)) continue;
-        if (!allowed(train)) continue;
+    const dep = toMins(stopDep(train.stops[iFrom]));
+    const arr = toMins(stopArr(train.stops[iTo]));
+    if (dep === null || arr === null) continue;
+    if (diffMins(depTime, dep) > 1439) continue;
 
-        const depStop = train.stops[idxFrom];
-        const dep = toMins(stopDep(depStop));
-        if (dep === null) continue;
-        const wait = diffMins(currentDepTime, dep);
-        if (wait < (legs.length === 0 ? 0 : MIN_TRANSFER_WAIT)) continue;
-        if (wait > 1439) continue; // déle než 24h čekání
+    results.push({ legs: [{ train, from: iFrom, to: iTo }], dep, arr, duration: diffMins(dep, arr), transfers: 0 });
+  }
 
-        // Projdi všechny stanice za tímto indexem
-        for (let idxTo = idxFrom + 1; idxTo < train.stops.length; idxTo++) {
-          const arrStop = train.stops[idxTo];
-          const arrSt   = arrStop.s;
-          const arr     = toMins(stopArr(arrStop));
-          if (arr === null) continue;
+  // ── PŘESTUPNÍ SPOJE ──
+  if (maxTransfers > 0) {
+    for (const { train: t1t, idx: iFrom1 } of fromEntries) {
+      const dep1 = toMins(stopDep(t1t.stops[iFrom1]));
+      if (dep1 === null || diffMins(depTime, dep1) > 1439) continue;
 
-          // Via check — musí projít přes via v prvním přímém vlaku nebo cestou
-          if (via && legs.length === 0) {
-            // Zkontroluj zda train projíždí přes via
-            const idxVia = stopIndex(train, via);
-            if (idxVia !== -1 && idxVia > idxFrom && idxVia <= idxTo) {
-              // ok
-            } else if (idxVia !== -1) {
-              // via je za to
-            }
-            // simplified: přes via se kontroluje globálně dole
+      for (let iMid = iFrom1 + 1; iMid < t1t.stops.length; iMid++) {
+        const midStop = t1t.stops[iMid];
+        if (midStop.p || midStop.s === to) continue;
+        const arr1 = toMins(stopArr(midStop));
+        if (arr1 === null) continue;
+
+        const midEntries = stationIndex.get(midStop.s) || [];
+        for (const { train: t2t, idx: iFrom2 } of midEntries) {
+          if (t2t.no === t1t.no) continue;
+          const dep2 = toMins(stopDep(t2t.stops[iFrom2]));
+          if (dep2 === null) continue;
+          const wait = diffMins(arr1, dep2);
+          if (wait < MIN_TRANSFER_WAIT || wait > 180) continue;
+
+          const iTo2 = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p);
+          if (iTo2 === -1) continue;
+          const arr2 = toMins(stopArr(t2t.stops[iTo2]));
+          if (arr2 === null) continue;
+
+          if (via) {
+            const inL1 = t1t.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
+            const inL2 = t2t.stops.findIndex((s, i) => i > iFrom2 && i <= iTo2 && s.s === via) !== -1;
+            if (!inL1 && !inL2) continue;
           }
 
-          const newLegs = [...legs, { train, from: idxFrom, to: idxTo }];
+          results.push({
+            legs: [{ train: t1t, from: iFrom1, to: iMid }, { train: t2t, from: iFrom2, to: iTo2 }],
+            dep: dep1, arr: arr2, duration: diffMins(dep1, arr2), transfers: 1,
+          });
 
-          if (arrSt === to) {
-            // Máme kompletní spoj
-            const firstDep = toMins(stopDep(newLegs[0].train.stops[newLegs[0].from]));
-            const dur = diffMins(firstDep, arr);
+          // ── DVA PŘESTUPY ──
+          if (maxTransfers >= 2) {
+            for (let iMid2 = iFrom2 + 1; iMid2 < t2t.stops.length; iMid2++) {
+              const midStop2 = t2t.stops[iMid2];
+              if (midStop2.p || midStop2.s === to) continue;
+              const arr2m = toMins(stopArr(midStop2));
+              if (arr2m === null) continue;
 
-            // Pokud je via, zkontroluj že někde v nohou projíždí
-            if (via) {
-              const allStops = newLegs.flatMap(l =>
-                l.train.stops.slice(l.from, l.to + 1).map(s => s.s)
-              );
-              if (!allStops.includes(via)) continue;
+              const mid2Entries = stationIndex.get(midStop2.s) || [];
+              for (const { train: t3t, idx: iFrom3 } of mid2Entries) {
+                if (t3t.no === t1t.no || t3t.no === t2t.no) continue;
+                const dep3 = toMins(stopDep(t3t.stops[iFrom3]));
+                if (dep3 === null) continue;
+                const wait2 = diffMins(arr2m, dep3);
+                if (wait2 < MIN_TRANSFER_WAIT || wait2 > 180) continue;
+
+                const iTo3 = t3t.stops.findIndex((s, i) => i > iFrom3 && s.s === to && !s.p);
+                if (iTo3 === -1) continue;
+                const arr3 = toMins(stopArr(t3t.stops[iTo3]));
+                if (arr3 === null) continue;
+
+                if (via) {
+                  const inL1 = t1t.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
+                  const inL2 = t2t.stops.findIndex((s, i) => i > iFrom2 && i < iMid2 && s.s === via) !== -1;
+                  const inL3 = t3t.stops.findIndex((s, i) => i > iFrom3 && i <= iTo3 && s.s === via) !== -1;
+                  if (!inL1 && !inL2 && !inL3) continue;
+                }
+
+                results.push({
+                  legs: [
+                    { train: t1t, from: iFrom1, to: iMid },
+                    { train: t2t, from: iFrom2, to: iMid2 },
+                    { train: t3t, from: iFrom3, to: iTo3 },
+                  ],
+                  dep: dep1, arr: arr3, duration: diffMins(dep1, arr3), transfers: 2,
+                });
+              }
             }
-
-            transferResults.push({
-              legs: newLegs,
-              dep: firstDep,
-              arr,
-              duration: dur,
-              transfers: newLegs.length - 1,
-            });
-          } else if (depth < maxTransfers) {
-            // Zkus přestoupit v arrSt
-            bfs(arrSt, arr, newLegs, new Set([...usedTrainNos, train.no]), depth + 1);
           }
         }
       }
     }
-
-    bfs(from, depTime, [], new Set(), 0);
   }
 
-  // ── MERGE + SORT + DEDUPLICATE ──
-  let all = [...directResults, ...transferResults];
-
-  // Seřaď dle odjezdu (od zadaného času)
-  all.sort((a, b) => {
+  // ── SORT + DEDUPLICATE + LIMIT ──
+  results.sort((a, b) => {
     const da = diffMins(depTime, a.dep);
     const db = diffMins(depTime, b.dep);
     if (da !== db) return da - db;
-    return a.duration - b.duration; // kratší spoj přednostně
+    if (a.transfers !== b.transfers) return a.transfers - b.transfers;
+    return a.duration - b.duration;
   });
 
-  // Deduplika — stejná kombinace čísel vlaků a stanic
   const seen = new Set();
-  all = all.filter(r => {
+  const all = results.filter(r => {
     const key = r.legs.map(l => `${l.train.no}:${l.from}-${l.to}`).join("|");
     if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    seen.add(key); return true;
+  }).slice(0, MAX_RESULTS);
 
-  all = all.slice(0, MAX_RESULTS);
+  console.log(`[Search] Vyhledávání: ${(performance.now()-t1).toFixed(0)} ms, nalezeno ${all.length} spojení`);
   renderResults(all, from, to);
 }
 
@@ -609,6 +597,14 @@ btn.onclick = () => {
 };
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+// Předvyplň aktuální čas
+(function() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  document.getElementById("inp-time").value = `${hh}:${mm}`;
+})();
+
 document.getElementById("btn-search").disabled = true;
 document.getElementById("results-area").innerHTML = `<div class="loading">Loading timetable data…</div>`;
 

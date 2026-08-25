@@ -368,6 +368,9 @@ function search() {
       for (let iMid = iFrom1 + 1; iMid < t1t.stops.length; iMid++) {
         const midStop = t1t.stops[iMid];
         if (midStop.p || midStop.s === to) continue;
+        // Pokud tento vlak pokračuje až do cíle, přestup zde nedává smysl
+        const trainGoesToDest = t1t.stops.findIndex((s, i) => i > iMid && s.s === to && !s.p) !== -1;
+        if (trainGoesToDest) continue;
         const arr1 = toMins(stopArr(midStop));
         if (arr1 === null) continue;
 
@@ -400,6 +403,9 @@ function search() {
             for (let iMid2 = iFrom2 + 1; iMid2 < t2t.stops.length; iMid2++) {
               const midStop2 = t2t.stops[iMid2];
               if (midStop2.p || midStop2.s === to) continue;
+              // Pokud vlak č. 2 pokračuje až do cíle, třetí vlak není potřeba
+              const t2GoesToDest = t2t.stops.findIndex((s, i) => i > iMid2 && s.s === to && !s.p) !== -1;
+              if (t2GoesToDest) continue;
               const arr2m = toMins(stopArr(midStop2));
               if (arr2m === null) continue;
 

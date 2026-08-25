@@ -418,10 +418,7 @@ function search(depTimeOverride) {
         const midEntries = stationIndex.get(midStop.s) || [];
         for (const { train: t2t, idx: iFrom2 } of midEntries) {
           if (t2t.no === t1t.no) continue;
-          // Pokud druhý vlak jede přímo z výchozí do cílové stanice, byl už nalezen jako přímý
-          const t2HasFrom = t2t.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1;
-          const t2HasTo   = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
-          if (t2HasFrom && t2HasTo) continue;
+
           const dep2 = toMins(stopDep(t2t.stops[iFrom2]));
           if (dep2 === null) continue;
           const wait = diffMins(arr1, dep2);

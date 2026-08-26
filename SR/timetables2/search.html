@@ -290,7 +290,6 @@ const TYPE_STYLES = {
 let allTrains = [];
 let stations = [];
 let dataLoaded = false;
-let lastSearchParams = null; // pro dřívější/pozdější
 
 // ─── DATA LOADING ─────────────────────────────────────────────────────────────
 async function loadData() {
@@ -346,28 +345,19 @@ function stopDep(stop) { return stop.d || stop.a; }
 function stopArr(stop) { return stop.a || stop.d; }
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
-function search(depTimeOverride) {
-  if (!dataLoaded) return;
-
-  const from   = document.getElementById("inp-from").value.trim();
-  const to     = document.getElementById("inp-to").value.trim();
-  const via    = document.getElementById("inp-via").value.trim();
-  const timeStr = document.getElementById("inp-time").value || "00:00";
+function runSearch(depTime) {
+  // Vrátí seřazené výsledky od depTime vpřed, bez limitu
+  const from         = document.getElementById("inp-from").value.trim();
+  const to           = document.getElementById("inp-to").value.trim();
+  const via          = document.getElementById("inp-via").value.trim();
   const maxTransfers = parseInt(document.getElementById("inp-transfers").value, 10);
-  const wantPassenger = document.getElementById("chk-passenger").checked;
-  const wantFreight   = document.getElementById("chk-freight").checked;
+  const wantPass     = document.getElementById("chk-passenger").checked;
+  const wantFreight  = document.getElementById("chk-freight").checked;
 
-  if (!from || !to) { showError("Please fill in From and To fields."); return; }
-  if (from === to)  { showError("From and To must be different stations."); return; }
-
-  const t1 = performance.now();
-  const depTime = depTimeOverride !== undefined ? depTimeOverride : toMins(timeStr);
-  lastSearchParams = { from, to, via, maxTransfers, wantPassenger, wantFreight, baseTime: toMins(timeStr) };
-
-  const allowed = t => t.category === "passenger" ? wantPassenger : wantFreight;
+  const allowed  = t => t.category === "passenger" ? wantPass : wantFreight;
   const eligible = allTrains.filter(allowed);
 
-  // Index: stanice → [{train, idx}] — jen zastávky kde vlak stojí (ne průjezd)
+  // Index: stanice → [{train, idx}] — pouze skutečné zastávky (ne průjezdy)
   const stationIndex = new Map();
   for (const train of eligible) {
     for (let i = 0; i < train.stops.length; i++) {
@@ -379,112 +369,104 @@ function search(depTimeOverride) {
   }
 
   const results = [];
+  const fromEntries = stationIndex.get(from) || [];
 
   // ── PŘÍMÉ SPOJE ──
-  const fromEntries = stationIndex.get(from) || [];
   for (const { train, idx: iFrom } of fromEntries) {
     const iTo = train.stops.findIndex((s, i) => i > iFrom && s.s === to && !s.p);
     if (iTo === -1) continue;
-
     if (via) {
       const iVia = train.stops.findIndex((s, i) => i > iFrom && i < iTo && s.s === via);
       if (iVia === -1) continue;
     }
-
     const dep = toMins(stopDep(train.stops[iFrom]));
     const arr = toMins(stopArr(train.stops[iTo]));
     if (dep === null || arr === null) continue;
     if (diffMins(depTime, dep) > 1439) continue;
-
     results.push({ legs: [{ train, from: iFrom, to: iTo }], dep, arr, duration: diffMins(dep, arr), transfers: 0 });
   }
 
-  // ── PŘESTUPNÍ SPOJE ──
-  // Sada přímých vlaků (čísla) — přestupní vlak který jede přímo from→to je zbytečný
-  const directTrainNos = new Set(results.map(r => r.legs[0].train.no));
+  // Čísla přímých vlaků — aby přestupní varianty nepoužívaly vlak který jede přímo
+  const directNos = new Set(results.map(r => r.legs[0].train.no));
 
+  // ── PŘESTUPNÍ SPOJE ──
   if (maxTransfers > 0) {
-    for (const { train: t1t, idx: iFrom1 } of fromEntries) {
-      const dep1 = toMins(stopDep(t1t.stops[iFrom1]));
+    for (const { train: t1, idx: iFrom1 } of fromEntries) {
+      // Vlak jedoucí přímo do cíle nepotřebuje přestup
+      if (directNos.has(t1.no)) continue;
+
+      const dep1 = toMins(stopDep(t1.stops[iFrom1]));
       if (dep1 === null || diffMins(depTime, dep1) > 1439) continue;
 
-      // Pokud tento vlak jede přímo do cíle, přeskočíme ho v přestupní smyčce
-      const t1GoesToDest = t1t.stops.findIndex((s, i) => i > iFrom1 && s.s === to && !s.p) !== -1;
-      if (t1GoesToDest) continue;
-
-      for (let iMid = iFrom1 + 1; iMid < t1t.stops.length; iMid++) {
-        const midStop = t1t.stops[iMid];
-        if (midStop.p || midStop.s === to) continue;
-        const arr1 = toMins(stopArr(midStop));
+      for (let iMid = iFrom1 + 1; iMid < t1.stops.length; iMid++) {
+        const s1 = t1.stops[iMid];
+        if (s1.p || s1.s === to) continue;
+        const arr1 = toMins(stopArr(s1));
         if (arr1 === null) continue;
 
-        const midEntries = stationIndex.get(midStop.s) || [];
-        for (const { train: t2t, idx: iFrom2 } of midEntries) {
-          if (t2t.no === t1t.no) continue;
-          // Druhý vlak jede přímo z from do to — zbytečný přestup
-          if (directTrainNos.has(t2t.no)) continue;
-          // Druhý vlak nastupujeme uprostřed, ale jede i z from — zbytečný přestup
-          const t2FromFrom = t2t.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1;
-          const t2ToTo     = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
-          if (t2FromFrom && t2ToTo) continue;
+        for (const { train: t2, idx: iFrom2 } of (stationIndex.get(s1.s) || [])) {
+          if (t2.no === t1.no) continue;
+          // t2 jede přímo from→to — zbytečný přestup
+          if (directNos.has(t2.no)) continue;
+          // t2 projíždí přes from před přestupem A zároveň jede do to — duplicitní přímý spoj
+          const t2passesFull = t2.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1
+                            && t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
+          if (t2passesFull) continue;
 
-          const dep2 = toMins(stopDep(t2t.stops[iFrom2]));
+          const dep2 = toMins(stopDep(t2.stops[iFrom2]));
           if (dep2 === null) continue;
           const wait = diffMins(arr1, dep2);
           if (wait < MIN_TRANSFER_WAIT || wait > 180) continue;
 
-          const iTo2 = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p);
+          const iTo2 = t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p);
           if (iTo2 === -1) continue;
-          const arr2 = toMins(stopArr(t2t.stops[iTo2]));
+          const arr2 = toMins(stopArr(t2.stops[iTo2]));
           if (arr2 === null) continue;
 
           if (via) {
-            const inL1 = t1t.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
-            const inL2 = t2t.stops.findIndex((s, i) => i > iFrom2 && i <= iTo2 && s.s === via) !== -1;
+            const inL1 = t1.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
+            const inL2 = t2.stops.findIndex((s, i) => i > iFrom2 && i <= iTo2 && s.s === via) !== -1;
             if (!inL1 && !inL2) continue;
           }
 
           results.push({
-            legs: [{ train: t1t, from: iFrom1, to: iMid }, { train: t2t, from: iFrom2, to: iTo2 }],
+            legs: [{ train: t1, from: iFrom1, to: iMid }, { train: t2, from: iFrom2, to: iTo2 }],
             dep: dep1, arr: arr2, duration: diffMins(dep1, arr2), transfers: 1,
           });
 
           // ── DVA PŘESTUPY ──
           if (maxTransfers >= 2) {
-            for (let iMid2 = iFrom2 + 1; iMid2 < t2t.stops.length; iMid2++) {
-              const midStop2 = t2t.stops[iMid2];
-              if (midStop2.p || midStop2.s === to) continue;
-              // Vlak č.2 jede přímo do cíle — třetí vlak zbytečný
-              const t2GoesToDest = t2t.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p) !== -1;
-              if (t2GoesToDest) continue;
-              const arr2m = toMins(stopArr(midStop2));
+            // t2 jede přímo do cíle — třetí vlak zbytečný
+            if (t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p) !== -1) continue;
+
+            for (let iMid2 = iFrom2 + 1; iMid2 < t2.stops.length; iMid2++) {
+              const s2 = t2.stops[iMid2];
+              if (s2.p || s2.s === to) continue;
+              const arr2m = toMins(stopArr(s2));
               if (arr2m === null) continue;
 
-              const mid2Entries = stationIndex.get(midStop2.s) || [];
-              for (const { train: t3t, idx: iFrom3 } of mid2Entries) {
-                if (t3t.no === t1t.no || t3t.no === t2t.no) continue;
-                const dep3 = toMins(stopDep(t3t.stops[iFrom3]));
+              for (const { train: t3, idx: iFrom3 } of (stationIndex.get(s2.s) || [])) {
+                if (t3.no === t1.no || t3.no === t2.no) continue;
+                if (directNos.has(t3.no)) continue;
+                const dep3 = toMins(stopDep(t3.stops[iFrom3]));
                 if (dep3 === null) continue;
                 const wait2 = diffMins(arr2m, dep3);
                 if (wait2 < MIN_TRANSFER_WAIT || wait2 > 180) continue;
-
-                const iTo3 = t3t.stops.findIndex((s, i) => i > iFrom3 && s.s === to && !s.p);
+                const iTo3 = t3.stops.findIndex((s, i) => i > iFrom3 && s.s === to && !s.p);
                 if (iTo3 === -1) continue;
-                const arr3 = toMins(stopArr(t3t.stops[iTo3]));
+                const arr3 = toMins(stopArr(t3.stops[iTo3]));
                 if (arr3 === null) continue;
-
                 if (via) {
-                  const inL1 = t1t.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
-                  const inL2 = t2t.stops.findIndex((s, i) => i > iFrom2 && i < iMid2 && s.s === via) !== -1;
-                  const inL3 = t3t.stops.findIndex((s, i) => i > iFrom3 && i <= iTo3 && s.s === via) !== -1;
+                  const inL1 = t1.stops.findIndex((s, i) => i > iFrom1 && i < iMid  && s.s === via) !== -1;
+                  const inL2 = t2.stops.findIndex((s, i) => i > iFrom2 && i < iMid2 && s.s === via) !== -1;
+                  const inL3 = t3.stops.findIndex((s, i) => i > iFrom3 && i <= iTo3 && s.s === via) !== -1;
                   if (!inL1 && !inL2 && !inL3) continue;
                 }
-
                 results.push({
                   legs: [
-                    { train: t1t, from: iFrom1, to: iMid },
-                    { train: t2t, from: iFrom2, to: iMid2 },
-                    { train: t3t, from: iFrom3, to: iTo3 },
+                    { train: t1, from: iFrom1, to: iMid },
+                    { train: t2, from: iFrom2, to: iMid2 },
+                    { train: t3, from: iFrom3, to: iTo3 },
                   ],
                   dep: dep1, arr: arr3, duration: diffMins(dep1, arr3), transfers: 2,
                 });
@@ -496,7 +478,7 @@ function search(depTimeOverride) {
     }
   }
 
-  // ── SORT + DEDUPLICATE + LIMIT ──
+  // Seřaď od depTime, méně přestupů přednostně, kratší spoj přednostně
   results.sort((a, b) => {
     const da = diffMins(depTime, a.dep);
     const db = diffMins(depTime, b.dep);
@@ -505,15 +487,68 @@ function search(depTimeOverride) {
     return a.duration - b.duration;
   });
 
+  // Deduplika
   const seen = new Set();
-  const all = results.filter(r => {
+  return results.filter(r => {
     const key = r.legs.map(l => `${l.train.no}:${l.from}-${l.to}`).join("|");
     if (seen.has(key)) return false;
     seen.add(key); return true;
-  }).slice(0, MAX_RESULTS);
+  });
+}
 
-  console.log(`[Search] Vyhledávání: ${(performance.now()-t1).toFixed(0)} ms, nalezeno ${all.length} spojení`);
-  renderResults(all, from, to);
+function search() {
+  if (!dataLoaded) return;
+  const from = document.getElementById("inp-from").value.trim();
+  const to   = document.getElementById("inp-to").value.trim();
+  if (!from || !to) { showError("Please fill in From and To fields."); return; }
+  if (from === to)  { showError("From and To must be different stations."); return; }
+
+  const t0 = performance.now();
+  const depTime = toMins(document.getElementById("inp-time").value || "00:00");
+  const all = runSearch(depTime).slice(0, MAX_RESULTS);
+  console.log(`[Search] ${(performance.now()-t0).toFixed(0)} ms, nalezeno ${all.length} spojení`);
+  renderResults(all, from, to, depTime);
+}
+
+function searchEarlier() {
+  if (!dataLoaded) return;
+  const from = document.getElementById("inp-from").value.trim();
+  const to   = document.getElementById("inp-to").value.trim();
+  if (!from || !to) return;
+
+  // Najdi první zobrazený čas odjezdu
+  const firstCard = document.querySelector(".result-card");
+  if (!firstCard) return;
+  const depText = firstCard.querySelector(".result-time")?.childNodes[0]?.textContent?.trim();
+  const firstDep = toMins(depText);
+  if (firstDep === null) return;
+
+  // Hledej od půlnoci dopředu, vezmi všechny před firstDep, posledních 5
+  const all = runSearch(0).filter(r => diffMins(0, r.dep) < diffMins(0, firstDep));
+  const earlier = all.slice(-MAX_RESULTS);
+  if (!earlier.length) return;
+  document.getElementById("inp-time").value = fromMins(earlier[0].dep);
+  renderResults(earlier, from, to, earlier[0].dep);
+}
+
+function searchLater() {
+  if (!dataLoaded) return;
+  const from = document.getElementById("inp-from").value.trim();
+  const to   = document.getElementById("inp-to").value.trim();
+  if (!from || !to) return;
+
+  // Najdi poslední zobrazený čas odjezdu
+  const cards = document.querySelectorAll(".result-card");
+  if (!cards.length) return;
+  const depText = cards[cards.length-1].querySelector(".result-time")?.childNodes[0]?.textContent?.trim();
+  const lastDep = toMins(depText);
+  if (lastDep === null) return;
+
+  // Hledej od lastDep + 1 min vpřed
+  const all = runSearch(lastDep + 1).slice(0, MAX_RESULTS);
+  if (!all.length) return;
+  document.getElementById("inp-time").value = fromMins(all[0].dep);
+  renderResults(all, from, to, all[0].dep);
 }
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
@@ -603,46 +638,6 @@ function buildStopsHTML(leg, r, li) {
   return html;
 }
 
-function searchEarlier() {
-  if (!lastSearchParams) return;
-  // Vezmi čas prvního zobrazeného výsledku a odečti 1 minutu
-  const firstCard = document.querySelector(".result-card");
-  if (!firstCard) return;
-  const timeEl = firstCard.querySelector(".result-time");
-  if (!timeEl) return;
-  const depText = timeEl.childNodes[0].textContent.trim();
-  const depMins = toMins(depText);
-  if (depMins === null) return;
-  // Hledej 5 spojení která odjíždějí těsně před tímto časem
-  // Spustíme search s upraveným časem = depMins - 1, ale výsledky obrátíme
-  runSearchWithTime(depMins - 1, true);
-}
-
-function searchLater() {
-  if (!lastSearchParams) return;
-  // Vezmi čas posledního zobrazeného výsledku + 1 min
-  const cards = document.querySelectorAll(".result-card");
-  if (!cards.length) return;
-  const lastCard = cards[cards.length - 1];
-  const timeEl = lastCard.querySelector(".result-time");
-  if (!timeEl) return;
-  const depText = timeEl.childNodes[0].textContent.trim();
-  const depMins = toMins(depText);
-  if (depMins === null) return;
-  runSearchWithTime(depMins + 1, false);
-}
-
-function runSearchWithTime(depTime, earlier) {
-  // Dočasně nastav čas v inputu
-  document.getElementById("inp-time").value = fromMins(depTime);
-  if (earlier) {
-    // Pro "dřívější" hledáme od depTime dozadu — najdeme víc a bereme posledních 5
-    search(depTime);
-  } else {
-    search(depTime);
-  }
-}
-
 function toggleHidden(uid) {
   const el = document.getElementById(uid);
   const btn = el.previousElementSibling;
@@ -652,7 +647,7 @@ function toggleHidden(uid) {
   btn.textContent = (open ? "▼ " : "▶ ") + label;
 }
 
-function renderResults(results, from, to) {
+function renderResults(results, from, to, depTime) {
   const area = document.getElementById("results-area");
   if (results.length === 0) {
     area.innerHTML = `<div class="no-results">No connections found. Try adjusting the time or increasing transfers.</div>`;

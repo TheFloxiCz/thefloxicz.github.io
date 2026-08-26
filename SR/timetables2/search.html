@@ -345,6 +345,26 @@ function stopDep(stop) { return stop.d || stop.a; }
 function stopArr(stop) { return stop.a || stop.d; }
 
 // ─── SEARCH ──────────────────────────────────────────────────────────────────
+
+// Vrátí true pokud stanice A a B leží ve stejném segmentu vlaku
+// Pokud vlak segmenty nemá, vrátí true (neomezujeme)
+function sameSegment(train, stA, stB) {
+  if (!train.segs || train.segs.length <= 1) return true;
+  const stopNames = train.stops.map(s => s.s);
+  const iA = stopNames.indexOf(stA);
+  const iB = stopNames.indexOf(stB);
+  if (iA === -1 || iB === -1) return false;
+  for (const [first, last] of train.segs) {
+    const iF = stopNames.indexOf(first);
+    const iL = stopNames.indexOf(last);
+    if (iF === -1 || iL === -1) continue;
+    const segStart = Math.min(iF, iL);
+    const segEnd   = Math.max(iF, iL);
+    if (iA >= segStart && iA <= segEnd && iB >= segStart && iB <= segEnd) return true;
+  }
+  return false;
+}
+
 function runSearch(depTime) {
   // Vrátí seřazené výsledky od depTime vpřed, bez limitu
   const from         = document.getElementById("inp-from").value.trim();
@@ -383,6 +403,7 @@ function runSearch(depTime) {
     const arr = toMins(stopArr(train.stops[iTo]));
     if (dep === null || arr === null) continue;
     if (diffMins(depTime, dep) > 1439) continue;
+    if (!sameSegment(train, from, to)) continue;
     results.push({ legs: [{ train, from: iFrom, to: iTo }], dep, arr, duration: diffMins(dep, arr), transfers: 0 });
   }
 
@@ -422,6 +443,10 @@ function runSearch(depTime) {
           if (iTo2 === -1) continue;
           const arr2 = toMins(stopArr(t2.stops[iTo2]));
           if (arr2 === null) continue;
+          // t1: výchozí → přestupní musí být ve stejném segmentu
+          if (!sameSegment(t1, from, s1.s)) continue;
+          // t2: přestupní → cílová musí být ve stejném segmentu
+          if (!sameSegment(t2, s1.s, to)) continue;
 
           if (via) {
             const inL1 = t1.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;

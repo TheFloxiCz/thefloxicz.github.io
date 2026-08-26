@@ -41,8 +41,15 @@ h1 span { color: var(--primary); }
 .search-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 24px; }
 .search-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
 
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; margin-bottom: 16px; align-items: end; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.btn-swap {
+  background: var(--card-bg); border: 1.5px solid var(--border); color: var(--primary);
+  font-size: 20px; font-weight: 700; border-radius: 8px; cursor: pointer;
+  padding: 8px 10px; height: fit-content; align-self: end; margin-bottom: 1px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-swap:hover { background: var(--primary-light); border-color: var(--primary); }
 .form-row-options { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 20px; }
 
 .field { display: flex; flex-direction: column; gap: 5px; position: relative; }
@@ -179,8 +186,8 @@ input[type="text"]:focus, input[type="time"]:focus {
 footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted); }
 footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 
-@media (max-width: 600px) {
-  .form-grid { grid-template-columns: 1fr; }
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: 1fr auto 1fr; }
   .form-row { grid-template-columns: 1fr 1fr; }
   h1 { font-size: 24px; }
 }
@@ -207,6 +214,7 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
         <input type="text" id="inp-from" placeholder="Departure station..." autocomplete="off">
         <div class="autocomplete-list" id="ac-from"></div>
       </div>
+      <button class="btn-swap" onclick="swapFromTo()" title="Swap From / To">⇄</button>
       <div class="field" id="wrap-to">
         <label>To</label>
         <input type="text" id="inp-to" placeholder="Arrival station..." autocomplete="off">
@@ -230,7 +238,15 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
           <option value="0">Direct only</option>
           <option value="1">Max 1</option>
           <option value="2" selected>Max 2</option>
-
+        </select>
+      </div>
+      <div class="field-transfers">
+        <label>Max wait at transfer</label>
+        <select id="inp-maxwait">
+          <option value="10">10 minutes</option>
+          <option value="60" selected>1 hour</option>
+          <option value="120">2 hours</option>
+          <option value="1440">Unlimited</option>
         </select>
       </div>
     </div>
@@ -260,7 +276,7 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const SEARCH_JSON_URL = "search.json"; // relativní cesta ke search.json
-const MAX_RESULTS = 5;
+const MAX_RESULTS = 10;
 const MIN_TRANSFER_WAIT = 3; // minimální čekání na přestup v minutách
 
 const TYPE_STYLES = {
@@ -371,6 +387,7 @@ function runSearch(depTime) {
   const to           = document.getElementById("inp-to").value.trim();
   const via          = document.getElementById("inp-via").value.trim();
   const maxTransfers = parseInt(document.getElementById("inp-transfers").value, 10);
+  const maxWait      = parseInt(document.getElementById("inp-maxwait").value, 10);
   const wantPass     = document.getElementById("chk-passenger").checked;
   const wantFreight  = document.getElementById("chk-freight").checked;
 
@@ -437,7 +454,7 @@ function runSearch(depTime) {
           const dep2 = toMins(stopDep(t2.stops[iFrom2]));
           if (dep2 === null) continue;
           const wait = diffMins(arr1, dep2);
-          if (wait < MIN_TRANSFER_WAIT || wait > 180) continue;
+          if (wait < MIN_TRANSFER_WAIT || wait > maxWait) continue;
 
           const iTo2 = t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p);
           if (iTo2 === -1) continue;
@@ -449,9 +466,11 @@ function runSearch(depTime) {
           if (!sameSegment(t2, s1.s, to)) continue;
 
           if (via) {
+            const transferAtVia = s1.s === via;
             const inL1 = t1.stops.findIndex((s, i) => i > iFrom1 && i < iMid && s.s === via) !== -1;
             const inL2 = t2.stops.findIndex((s, i) => i > iFrom2 && i <= iTo2 && s.s === via) !== -1;
-            if (!inL1 && !inL2) continue;
+            if (!transferAtVia && !inL1 && !inL2) continue; // via nikde v trase
+            if (!transferAtVia && inL1 && inL2) continue;   // via na obou úsecích = zpětná cesta
           }
 
           results.push({
@@ -476,16 +495,20 @@ function runSearch(depTime) {
                 const dep3 = toMins(stopDep(t3.stops[iFrom3]));
                 if (dep3 === null) continue;
                 const wait2 = diffMins(arr2m, dep3);
-                if (wait2 < MIN_TRANSFER_WAIT || wait2 > 180) continue;
+                if (wait2 < MIN_TRANSFER_WAIT || wait2 > maxWait) continue;
                 const iTo3 = t3.stops.findIndex((s, i) => i > iFrom3 && s.s === to && !s.p);
                 if (iTo3 === -1) continue;
                 const arr3 = toMins(stopArr(t3.stops[iTo3]));
                 if (arr3 === null) continue;
                 if (via) {
+                  const t1AtVia  = s1.s === via;
+                  const t2AtVia  = s2.s === via;
                   const inL1 = t1.stops.findIndex((s, i) => i > iFrom1 && i < iMid  && s.s === via) !== -1;
                   const inL2 = t2.stops.findIndex((s, i) => i > iFrom2 && i < iMid2 && s.s === via) !== -1;
                   const inL3 = t3.stops.findIndex((s, i) => i > iFrom3 && i <= iTo3 && s.s === via) !== -1;
-                  if (!inL1 && !inL2 && !inL3) continue;
+                  const legCount = [inL1, t1AtVia, inL2, t2AtVia, inL3].filter(Boolean).length;
+                  if (legCount === 0) continue; // via nikde
+                  if (legCount > 1 && !t1AtVia && !t2AtVia) continue; // via vícekrát bez přestupu tam = zpětná cesta
                 }
                 results.push({
                   legs: [
@@ -744,6 +767,15 @@ function renderResults(results, from, to, depTime) {
 
 function showError(msg) {
   document.getElementById("results-area").innerHTML = `<div class="error-msg">⚠️ ${msg}</div>`;
+}
+
+// ─── SWAP FROM/TO ────────────────────────────────────────────────────────────
+function swapFromTo() {
+  const f = document.getElementById("inp-from");
+  const t = document.getElementById("inp-to");
+  const tmp = f.value;
+  f.value = t.value;
+  t.value = tmp;
 }
 
 // ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────

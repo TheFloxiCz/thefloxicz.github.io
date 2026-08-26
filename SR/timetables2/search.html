@@ -512,12 +512,25 @@ function runSearch(depTime) {
     return a.duration - b.duration;
   });
 
-  // Deduplika
+  // Deduplika identických spojů
   const seen = new Set();
-  return results.filter(r => {
+  const deduped = results.filter(r => {
     const key = r.legs.map(l => `${l.train.no}:${l.from}-${l.to}`).join("|");
     if (seen.has(key)) return false;
     seen.add(key); return true;
+  });
+
+  // Pro přestupní spoje: zachovej u každého prvního vlaku jen nejrychlejší přípoj.
+  // Klíč = číslo prvního vlaku + index nástupu (stejný vlak může jet vícekrát)
+  // Výsledky jsou už seřazeny dle doby jízdy → první nalezený je nejrychlejší.
+  const bestForFirstLeg = new Map();
+  return deduped.filter(r => {
+    if (r.transfers === 0) return true; // přímé spoje vždy
+    // Klíč: t1.no + odjezd t1 (aby různé odjezdy stejného vlaku nekolidovaly)
+    const key = `${r.legs[0].train.no}:${r.dep}`;
+    if (bestForFirstLeg.has(key)) return false;
+    bestForFirstLeg.set(key, true);
+    return true;
   });
 }
 

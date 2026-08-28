@@ -387,18 +387,17 @@ function runSearch(depTime) {
   const to           = document.getElementById("inp-to").value.trim();
   const via          = document.getElementById("inp-via").value.trim();
   const maxTransfers = parseInt(document.getElementById("inp-transfers").value, 10);
-  const maxWait      = parseInt(document.getElementById("inp-maxwait").value, 10);
+  const maxWait      = parseInt(document.getElementById("inp-maxwait").value, 10) || 60;
   const wantPass     = document.getElementById("chk-passenger").checked;
   const wantFreight  = document.getElementById("chk-freight").checked;
 
   const allowed  = t => t.category === "passenger" ? wantPass : wantFreight;
   const eligible = allTrains.filter(allowed);
 
-  // Index: stanice → [{train, idx}] — pouze skutečné zastávky (ne průjezdy)
+  // Index: stanice → [{train, idx}] — všechny zastávky (přestoupit lze kdekoliv)
   const stationIndex = new Map();
   for (const train of eligible) {
     for (let i = 0; i < train.stops.length; i++) {
-      if (train.stops[i].p) continue;
       const st = train.stops[i].s;
       if (!stationIndex.has(st)) stationIndex.set(st, []);
       stationIndex.get(st).push({ train, idx: i });
@@ -410,7 +409,7 @@ function runSearch(depTime) {
 
   // ── PŘÍMÉ SPOJE ──
   for (const { train, idx: iFrom } of fromEntries) {
-    const iTo = train.stops.findIndex((s, i) => i > iFrom && s.s === to && !s.p);
+    const iTo = train.stops.findIndex((s, i) => i > iFrom && s.s === to);
     if (iTo === -1) continue;
     if (via) {
       const iVia = train.stops.findIndex((s, i) => i > iFrom && i < iTo && s.s === via);
@@ -423,6 +422,16 @@ function runSearch(depTime) {
     if (!sameSegment(train, from, to)) continue;
     results.push({ legs: [{ train, from: iFrom, to: iTo }], dep, arr, duration: diffMins(dep, arr), transfers: 0 });
   }
+
+  // Nejrychlejší přímý spoj — slouží jako referenční doba pro filtrování přestupů
+  const bestDirectDuration = results.length > 0
+    ? Math.min(...results.map(r => r.duration))
+    : null;
+  // Maximální povolená celková doba přestupního spoje:
+  // 2× nejrychlejší přímý, nebo 4 hodiny pokud přímý neexistuje
+  const maxTotalDuration = bestDirectDuration !== null
+    ? bestDirectDuration * 2
+    : 240;
 
   // Čísla přímých vlaků — aby přestupní varianty nepoužívaly vlak který jede přímo
   const directNos = new Set(results.map(r => r.legs[0].train.no));
@@ -438,17 +447,17 @@ function runSearch(depTime) {
 
       for (let iMid = iFrom1 + 1; iMid < t1.stops.length; iMid++) {
         const s1 = t1.stops[iMid];
-        if (s1.p || s1.s === to) continue;
+        if (s1.s === to) continue;
         const arr1 = toMins(stopArr(s1));
-        if (arr1 === null) continue;
+        if (arr1 === null) continue; // bez času — nelze přestoupit
 
         for (const { train: t2, idx: iFrom2 } of (stationIndex.get(s1.s) || [])) {
           if (t2.no === t1.no) continue;
           // t2 jede přímo from→to — zbytečný přestup
           if (directNos.has(t2.no)) continue;
           // t2 projíždí přes from před přestupem A zároveň jede do to — duplicitní přímý spoj
-          const t2passesFull = t2.stops.findIndex((s, i) => i < iFrom2 && s.s === from && !s.p) !== -1
-                            && t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to   && !s.p) !== -1;
+          const t2passesFull = t2.stops.findIndex((s, i) => i < iFrom2 && s.s === from) !== -1
+                            && t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to) !== -1;
           if (t2passesFull) continue;
 
           const dep2 = toMins(stopDep(t2.stops[iFrom2]));
@@ -456,7 +465,7 @@ function runSearch(depTime) {
           const wait = diffMins(arr1, dep2);
           if (wait < MIN_TRANSFER_WAIT || wait > maxWait) continue;
 
-          const iTo2 = t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p);
+          const iTo2 = t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to);
           if (iTo2 === -1) continue;
           const arr2 = toMins(stopArr(t2.stops[iTo2]));
           if (arr2 === null) continue;
@@ -473,19 +482,24 @@ function runSearch(depTime) {
             if (!transferAtVia && inL1 && inL2) continue;   // via na obou úsecích = zpětná cesta
           }
 
+          const leg1dur = diffMins(dep1, arr1);
+          const waitDur = diffMins(arr1, dep2);
+          const leg2dur = diffMins(dep2, arr2);
+          const dur1t = leg1dur + waitDur + leg2dur;
+          if (dur1t > maxTotalDuration) continue;
           results.push({
             legs: [{ train: t1, from: iFrom1, to: iMid }, { train: t2, from: iFrom2, to: iTo2 }],
-            dep: dep1, arr: arr2, duration: diffMins(dep1, arr2), transfers: 1,
+            dep: dep1, arr: arr2, duration: dur1t, transfers: 1,
           });
 
           // ── DVA PŘESTUPY ──
           if (maxTransfers >= 2) {
             // t2 jede přímo do cíle — třetí vlak zbytečný
-            if (t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to && !s.p) !== -1) continue;
+            if (t2.stops.findIndex((s, i) => i > iFrom2 && s.s === to) !== -1) continue;
 
             for (let iMid2 = iFrom2 + 1; iMid2 < t2.stops.length; iMid2++) {
               const s2 = t2.stops[iMid2];
-              if (s2.p || s2.s === to) continue;
+              if (s2.s === to) continue;
               const arr2m = toMins(stopArr(s2));
               if (arr2m === null) continue;
 
@@ -496,7 +510,7 @@ function runSearch(depTime) {
                 if (dep3 === null) continue;
                 const wait2 = diffMins(arr2m, dep3);
                 if (wait2 < MIN_TRANSFER_WAIT || wait2 > maxWait) continue;
-                const iTo3 = t3.stops.findIndex((s, i) => i > iFrom3 && s.s === to && !s.p);
+                const iTo3 = t3.stops.findIndex((s, i) => i > iFrom3 && s.s === to);
                 if (iTo3 === -1) continue;
                 const arr3 = toMins(stopArr(t3.stops[iTo3]));
                 if (arr3 === null) continue;
@@ -510,13 +524,21 @@ function runSearch(depTime) {
                   if (legCount === 0) continue; // via nikde
                   if (legCount > 1 && !t1AtVia && !t2AtVia) continue; // via vícekrát bez přestupu tam = zpětná cesta
                 }
+                const dep2_here = toMins(stopDep(t2.stops[iFrom2]));
+                const leg1d = diffMins(dep1, arr1);
+                const w1d   = diffMins(arr1, dep2_here);
+                const leg2d = diffMins(dep2_here, arr2m);
+                const w2d   = diffMins(arr2m, dep3);
+                const leg3d = diffMins(dep3, arr3);
+                const dur2t = leg1d + w1d + leg2d + w2d + leg3d;
+                if (dur2t > maxTotalDuration) continue;
                 results.push({
                   legs: [
                     { train: t1, from: iFrom1, to: iMid },
                     { train: t2, from: iFrom2, to: iMid2 },
                     { train: t3, from: iFrom3, to: iTo3 },
                   ],
-                  dep: dep1, arr: arr3, duration: diffMins(dep1, arr3), transfers: 2,
+                  dep: dep1, arr: arr3, duration: dur2t, transfers: 2,
                 });
               }
             }

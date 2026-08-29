@@ -800,6 +800,15 @@ function swapFromTo() {
   t.value = tmp;
 }
 
+// ─── NORMALIZE ───────────────────────────────────────────────────────────────
+function normalizeStr(s) {
+  return s
+    .replace(/ł/g, 'l').replace(/Ł/g, 'L') // ł se NFD nerozloží
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')         // odstraní diakritiku
+    .toLowerCase();
+}
+
 // ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
 function setupAutocomplete(inputId, listId) {
   const inp = document.getElementById(inputId);
@@ -809,7 +818,8 @@ function setupAutocomplete(inputId, listId) {
   inp.addEventListener("input", () => {
     const val = inp.value.trim().toLowerCase();
     if (!val || !dataLoaded) { list.classList.remove("open"); return; }
-    const matches = stations.filter(s => s.toLowerCase().includes(val)).slice(0, 10);
+    const normVal = normalizeStr(val);
+    const matches = stations.filter(s => normalizeStr(s).includes(normVal)).slice(0, 10);
     if (!matches.length) { list.classList.remove("open"); return; }
     activeIdx = -1;
     list.innerHTML = matches.map((s, i) =>

@@ -153,10 +153,23 @@ input[type="text"]:focus, input[type="time"]:focus {
 .result-stops { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
 .result-stops.open { display: block; }
 .leg-header {
-  font-size: 15px; font-weight: 700; margin: 10px 0 5px 0; padding-bottom: 4px;
-  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+  margin: 10px 0 5px 0; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
 }
-.leg-header-dest { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.leg-header-title { display: flex; align-items: center; gap: 8px; }
+.leg-header-title strong { font-size: 18px; font-weight: 700; }
+.leg-header-dest { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.leg-header-meta {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 13px; font-weight: 600; color: var(--text-muted);
+  white-space: nowrap;
+}
+.leg-meta-item { display: flex; align-items: center; gap: 4px; }
+.leg-meta-icon { flex-shrink: 0; opacity: 0.7; }
 .stops-hidden-block { margin: 2px 0; }
 .stops-hidden-toggle {
   background: none; border: 1px dashed var(--border); color: var(--text-muted);
@@ -668,7 +681,35 @@ function buildStopsHTML(leg, r, li) {
 
   // Hlavička úseku v detailu — větší, s konečnou
   const dest = trainDest(leg.train);
-  html += `<div class="leg-header">${badgeHTML(leg.train.type)} <strong>${leg.train.no}</strong> <span class="leg-header-dest">→ ${dest}</span></div>`;
+  const consist = leg.train.consist || null;
+  const vmax    = leg.train.vmax    || null;
+
+  // SVG ikona lokomotivy
+  const locoIcon = `<svg class="leg-meta-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="1" y="8" width="20" height="10" rx="2"/>
+    <path d="M1 12h20"/>
+    <circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+    <path d="M7 8V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/>
+  </svg>`;
+
+  // SVG ikona rychlosti (tachometr)
+  const speedIcon = `<svg class="leg-meta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 12m-9 0a9 9 0 1 0 18 0"/>
+    <path d="M12 12L16 8"/>
+    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+  </svg>`;
+
+  const metaHTML = (consist || vmax) ? `
+    <div class="leg-header-meta">
+      ${consist ? `<div class="leg-meta-item">${locoIcon}<span>${consist}</span></div>` : ''}
+      ${vmax    ? `<div class="leg-meta-item">${speedIcon}<span>${vmax} km/h</span></div>` : ''}
+    </div>` : '';
+
+  html += `<div class="leg-header">
+    <div class="leg-header-title">${badgeHTML(leg.train.type)} <strong>${leg.train.no}</strong> <span class="leg-header-dest">→ ${dest}</span></div>
+    <div></div>
+    ${metaHTML}
+  </div>`;
 
   // Skryté zastávky před
   if (before.length > 0) {

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCS Map Prices</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:        #080d14;
+      --bg2:       #0d1520;
+      --bg3:       #111d2e;
+      --border:    #1a3050;
+      --neon:      #00e5a0;
+      --neon-dim:  #00a86b;
+      --red:       #ff4060;
+      --red-dim:   #c02040;
+      --text:      #c8d8e8;
+      --text-dim:  #607080;
+      --mono:      'Share Tech Mono', monospace;
+      --sans:      'Exo 2', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 2rem;
+      height: 56px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-back {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      transition: color .15s;
+    }
+    .nav-back:hover { color: var(--neon); }
+    .nav-sep { color: var(--border); }
+    .nav-title {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* MAIN */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    /* MAP HEADER */
+    .map-header {
+      margin-bottom: 2rem;
+    }
+    .map-header h1 {
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.15;
+    }
+    .map-header .map-id {
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--text-dim);
+      margin-top: .3rem;
+    }
+
+    /* STAT BRICKS */
+    .bricks {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .brick {
+      background: var(--bg2);
+      padding: 1.25rem 1.5rem;
+    }
+    .brick-label {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text-dim);
+      margin-bottom: .5rem;
+      letter-spacing: .04em;
+    }
+    .brick-value {
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+    }
+    .brick-value.green { color: var(--neon); }
+    .brick-value.red   { color: var(--red); }
+
+    .brick-meta {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-top: .4rem;
+    }
+    .brick-pct {
+      font-family: var(--mono);
+      font-size: .8rem;
+      font-weight: 600;
+      padding: .15rem .4rem;
+      border-radius: 2px;
+    }
+    .brick-pct.green { color: var(--neon); background: rgba(0,229,160,.1); }
+    .brick-pct.red   { color: var(--red);  background: rgba(255,64,96,.1); }
+    .brick-date {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text-dim);
+    }
+
+    /* CHART SECTION */
+    .chart-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+    .chart-title {
+      font-family: var(--mono);
+      font-size: .8rem;
+      color: var(--text-dim);
+    }
+    .range-btns {
+      display: flex;
+      gap: 2px;
+    }
+    .range-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: .72rem;
+      padding: .3rem .6rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .range-btn:hover { border-color: var(--neon); color: var(--neon); }
+    .range-btn.active {
+      background: rgba(0,229,160,.12);
+      border-color: var(--neon);
+      color: var(--neon);
+    }
+    .chart-wrap {
+      position: relative;
+      height: 320px;
+    }
+
+    /* ERROR */
+    .error-msg {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: .85rem;
+    }
+
+    /* SCANLINE */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.04) 2px,
+        rgba(0,0,0,.04) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    @media (max-width: 600px) {
+      main { padding: 1.5rem 1rem 3rem; }
+      .chart-wrap { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-back" href="index.html">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Zpět
+  </a>
+  <span class="nav-sep">|</span>
+  <span class="nav-title" id="nav-title">Načítám...</span>
+</nav>
+
+<main id="main">
+  <div class="error-msg">Načítám data...</div>
+</main>
+
+<script>
+const BASE = './data/maps/';
+const RANGES = [
+  { key: '7d',  label: '7d',  days: 7 },
+  { key: '30d', label: '30d', days: 30 },
+  { key: '3m',  label: '3m',  days: 90 },
+  { key: '6m',  label: '6m',  days: 180 },
+  { key: '1y',  label: '1y',  days: 365 },
+  { key: '3y',  label: '3y',  days: 1095 },
+  { key: 'all', label: 'vše', days: Infinity },
+];
+let chart = null;
+let allPrices = [];
+let activeRange = '3m';
+
+function fmt(price) {
+  return price.toLocaleString('cs-CZ') + ' €';
+}
+
+function fmtDate(iso) {
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+function pctDiff(from, to) {
+  if (from === 0) return 0;
+  return ((to - from) / from * 100);
+}
+
+function filterByRange(prices, rangeKey) {
+  const range = RANGES.find(r => r.key === rangeKey);
+  if (!range || range.days === Infinity) return prices;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - range.days);
+  const cutStr = cutoff.toISOString().slice(0, 10);
+  return prices.filter(([d]) => d >= cutStr);
+}
+
+function renderChart(prices) {
+  const labels = prices.map(([d]) => fmtDate(d));
+  const values = prices.map(([, p]) => p);
+
+  if (chart) chart.destroy();
+
+  const ctx = document.getElementById('price-chart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 300);
+  grad.addColorStop(0, 'rgba(0,229,160,.25)');
+  grad.addColorStop(1, 'rgba(0,229,160,0)');
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#00e5a0',
+        borderWidth: 2,
+        backgroundColor: grad,
+        pointRadius: prices.length > 90 ? 0 : 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: '#00e5a0',
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1520',
+          borderColor: '#1a3050',
+          borderWidth: 1,
+          titleColor: '#607080',
+          bodyColor: '#00e5a0',
+          titleFont: { family: "'Share Tech Mono', monospace", size: 11 },
+          bodyFont: { family: "'Share Tech Mono', monospace", size: 13 },
+          callbacks: {
+            label: ctx => fmt(Math.round(ctx.parsed.y))
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1a3050' },
+          ticks: {
+            color: '#607080',
+            font: { family: "'Share Tech Mono', monospace", size: 10 },
+            maxTicksLimit: 8,
+            maxRotation: 0,
+          }
+        },
+        y: {
+          grid: { color: '#1a3050' },
+          ticks: {
+            color: '#607080',
+            font: { family: "'Share Tech Mono', monospace", size: 10 },
+            callback: v => v.toLocaleString('cs-CZ') + ' €'
+          }
+        }
+      }
+    }
+  });
+}
+
+function setRange(key) {
+  activeRange = key;
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === key);
+  });
+  const filtered = filterByRange(allPrices, key);
+  renderChart(filtered);
+}
+
+async function load() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if (!id) { document.getElementById('main').innerHTML = '<div class="error-msg">Chybí ID mapy.</div>'; return; }
+
+  try {
+    const res = await fetch(BASE + encodeURIComponent(id) + '.json');
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+
+    allPrices = data.prices; // [[date, price], ...]
+    const name = data.name;
+
+    document.title = name + ' — BCS Map Prices';
+    document.getElementById('nav-title').textContent = name;
+
+    // Compute stats
+    const current = allPrices[allPrices.length - 1][1];
+    const minEntry = allPrices.reduce((a, b) => b[1] < a[1] ? b : a);
+    const maxEntry = allPrices.reduce((a, b) => b[1] > a[1] ? b : a);
+
+    const minPct = pctDiff(current, minEntry[1]);  // negative = cheaper than now
+    const maxPct = pctDiff(current, maxEntry[1]);  // positive = more expensive than now
+
+    const minPctStr = (minPct >= 0 ? '+' : '') + minPct.toFixed(1) + ' %';
+    const maxPctStr = (maxPct >= 0 ? '+' : '') + maxPct.toFixed(1) + ' %';
+
+    document.getElementById('main').innerHTML = `
+      <div class="map-header">
+        <h1>${name}</h1>
+        <div class="map-id">ID: ${id}</div>
+      </div>
+
+      <div class="bricks">
+        <div class="brick">
+          <div class="brick-label">Nejnižší zaznamenaná cena</div>
+          <div class="brick-value green">${fmt(minEntry[1])}</div>
+          <div class="brick-meta">
+            <span class="brick-pct green">${minPctStr}</span>
+            <span class="brick-date">${fmtDate(minEntry[0])}</span>
+          </div>
+        </div>
+        <div class="brick">
+          <div class="brick-label">Nejvyšší zaznamenaná cena</div>
+          <div class="brick-value red">${fmt(maxEntry[1])}</div>
+          <div class="brick-meta">
+            <span class="brick-pct red">${maxPctStr}</span>
+            <span class="brick-date">${fmtDate(maxEntry[0])}</span>
+          </div>
+        </div>
+        <div class="brick">
+          <div class="brick-label">Aktuální cena</div>
+          <div class="brick-value">${fmt(current)}</div>
+          <div class="brick-meta">
+            <span class="brick-date">${fmtDate(allPrices[allPrices.length - 1][0])}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title">Historie cen</div>
+          <div class="range-btns">
+            ${RANGES.map(r => `<button class="range-btn${r.key === '3m' ? ' active' : ''}" data-range="${r.key}">${r.label}</button>`).join('')}
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="price-chart"></canvas>
+        </div>
+      </div>
+    `;
+
+    document.querySelectorAll('.range-btn').forEach(btn => {
+      btn.addEventListener('click', () => setRange(btn.dataset.range));
+    });
+
+    setRange('3m');
+
+  } catch(e) {
+    document.getElementById('main').innerHTML = '<div class="error-msg">Mapa nenalezena nebo chyba při načítání dat.</div>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

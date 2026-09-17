@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +18,7 @@
       --red:       #ff4060;
       --red-dim:   #c02040;
       --text:      #c8d8e8;
-      --text-dim:  #607080;
+      --text-dim:  #8aa8c0;
       --mono:      'Share Tech Mono', monospace;
       --sans:      'Exo 2', sans-serif;
     }
@@ -106,10 +106,10 @@
     }
     .brick-label {
       font-family: var(--mono);
-      font-size: .72rem;
-      color: var(--text-dim);
+      font-size: .85rem;
+      color: #a0b8cc;
       margin-bottom: .5rem;
-      letter-spacing: .04em;
+      letter-spacing: .02em;
     }
     .brick-value {
       font-size: 1.65rem;
@@ -119,26 +119,27 @@
     }
     .brick-value.green { color: var(--neon); }
     .brick-value.red   { color: var(--red); }
+    .brick-value.current { font-size: 2.2rem; color: #fff; }
 
     .brick-meta {
       display: flex;
       align-items: center;
       gap: .6rem;
-      margin-top: .4rem;
+      margin-top: .5rem;
     }
     .brick-pct {
       font-family: var(--mono);
-      font-size: .8rem;
+      font-size: .85rem;
       font-weight: 600;
-      padding: .15rem .4rem;
+      padding: .2rem .5rem;
       border-radius: 2px;
     }
     .brick-pct.green { color: var(--neon); background: rgba(0,229,160,.1); }
     .brick-pct.red   { color: var(--red);  background: rgba(255,64,96,.1); }
     .brick-date {
       font-family: var(--mono);
-      font-size: .72rem;
-      color: var(--text-dim);
+      font-size: .82rem;
+      color: #a0b8cc;
     }
 
     /* CHART SECTION */
@@ -157,8 +158,8 @@
     }
     .chart-title {
       font-family: var(--mono);
-      font-size: .8rem;
-      color: var(--text-dim);
+      font-size: .9rem;
+      color: #a0b8cc;
     }
     .range-btns {
       display: flex;
@@ -223,14 +224,14 @@
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
-    Zpět
+    Back
   </a>
   <span class="nav-sep">|</span>
-  <span class="nav-title" id="nav-title">Načítám...</span>
+  <span class="nav-title" id="nav-title">Loading...</span>
 </nav>
 
 <main id="main">
-  <div class="error-msg">Načítám data...</div>
+  <div class="error-msg">Loading data...</div>
 </main>
 
 <script>
@@ -242,7 +243,7 @@ const RANGES = [
   { key: '6m',  label: '6m',  days: 180 },
   { key: '1y',  label: '1y',  days: 365 },
   { key: '3y',  label: '3y',  days: 1095 },
-  { key: 'all', label: 'vše', days: Infinity },
+  { key: 'all', label: 'all', days: Infinity },
 ];
 let chart = null;
 let allPrices = [];
@@ -308,7 +309,7 @@ function renderChart(prices) {
           backgroundColor: '#0d1520',
           borderColor: '#1a3050',
           borderWidth: 1,
-          titleColor: '#607080',
+          titleColor: '#b8d0e4',
           bodyColor: '#00e5a0',
           titleFont: { family: "'Share Tech Mono', monospace", size: 11 },
           bodyFont: { family: "'Share Tech Mono', monospace", size: 13 },
@@ -321,8 +322,8 @@ function renderChart(prices) {
         x: {
           grid: { color: '#1a3050' },
           ticks: {
-            color: '#607080',
-            font: { family: "'Share Tech Mono', monospace", size: 10 },
+            color: '#b8d0e4',
+            font: { family: "'Share Tech Mono', monospace", size: 11 },
             maxTicksLimit: 8,
             maxRotation: 0,
           }
@@ -330,8 +331,8 @@ function renderChart(prices) {
         y: {
           grid: { color: '#1a3050' },
           ticks: {
-            color: '#607080',
-            font: { family: "'Share Tech Mono', monospace", size: 10 },
+            color: '#b8d0e4',
+            font: { family: "'Share Tech Mono', monospace", size: 11 },
             callback: v => v.toLocaleString('cs-CZ') + ' €'
           }
         }
@@ -352,7 +353,7 @@ function setRange(key) {
 async function load() {
   const params = new URLSearchParams(location.search);
   const id = params.get('id');
-  if (!id) { document.getElementById('main').innerHTML = '<div class="error-msg">Chybí ID mapy.</div>'; return; }
+  if (!id) { document.getElementById('main').innerHTML = '<div class="error-msg">Missing map ID.</div>'; return; }
 
   try {
     const res = await fetch(BASE + encodeURIComponent(id) + '.json');
@@ -363,6 +364,7 @@ async function load() {
     const name = data.name;
 
     document.title = name + ' — BCS Map Prices';
+
     document.getElementById('nav-title').textContent = name;
 
     // Compute stats
@@ -384,7 +386,7 @@ async function load() {
 
       <div class="bricks">
         <div class="brick">
-          <div class="brick-label">Nejnižší zaznamenaná cena</div>
+          <div class="brick-label">Lowest recorded price</div>
           <div class="brick-value green">${fmt(minEntry[1])}</div>
           <div class="brick-meta">
             <span class="brick-pct green">${minPctStr}</span>
@@ -392,25 +394,25 @@ async function load() {
           </div>
         </div>
         <div class="brick">
-          <div class="brick-label">Nejvyšší zaznamenaná cena</div>
+          <div class="brick-label">Current price</div>
+          <div class="brick-value current">${fmt(current)}</div>
+          <div class="brick-meta">
+            <span class="brick-date">${fmtDate(allPrices[allPrices.length - 1][0])}</span>
+          </div>
+        </div>
+        <div class="brick">
+          <div class="brick-label">Highest recorded price</div>
           <div class="brick-value red">${fmt(maxEntry[1])}</div>
           <div class="brick-meta">
             <span class="brick-pct red">${maxPctStr}</span>
             <span class="brick-date">${fmtDate(maxEntry[0])}</span>
           </div>
         </div>
-        <div class="brick">
-          <div class="brick-label">Aktuální cena</div>
-          <div class="brick-value">${fmt(current)}</div>
-          <div class="brick-meta">
-            <span class="brick-date">${fmtDate(allPrices[allPrices.length - 1][0])}</span>
-          </div>
-        </div>
       </div>
 
       <div class="chart-section">
         <div class="chart-header">
-          <div class="chart-title">Historie cen</div>
+          <div class="chart-title">Price history</div>
           <div class="range-btns">
             ${RANGES.map(r => `<button class="range-btn${r.key === '3m' ? ' active' : ''}" data-range="${r.key}">${r.label}</button>`).join('')}
           </div>
@@ -428,7 +430,7 @@ async function load() {
     setRange('3m');
 
   } catch(e) {
-    document.getElementById('main').innerHTML = '<div class="error-msg">Mapa nenalezena nebo chyba při načítání dat.</div>';
+    document.getElementById('main').innerHTML = '<div class="error-msg">Map not found or failed to load data.</div>';
   }
 }
 

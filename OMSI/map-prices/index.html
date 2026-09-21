@@ -95,7 +95,16 @@
     }
     .map-price {
       font-family: var(--mono); font-size: 1.2rem; color: var(--neon);
+      margin-bottom: .35rem;
     }
+    .trend {
+      font-size: 1.3rem; line-height: 1;
+    }
+    .trend.up2   { color: #ff4060; }
+    .trend.up1   { color: #ff9040; }
+    .trend.flat  { color: #8aa8c0; }
+    .trend.down1 { color: #80e0a0; }
+    .trend.down2 { color: #00e5a0; }
 
     .state-msg {
       grid-column: 1/-1; padding: 3rem; text-align: center;
@@ -159,7 +168,7 @@
       const res = await fetch(BASE + 'index.json');
       const data = await res.json();
 
-      allMaps = Object.entries(data).map(([id, info]) => ({ id, name: info.name, current: info.current }));
+      allMaps = Object.entries(data).map(([id, info]) => ({ id, name: info.name, current: info.current, avg_7d: info.avg_7d ?? null }));
 
       const minM = allMaps.reduce((a, b) => a.current < b.current ? a : b);
       const maxM = allMaps.reduce((a, b) => a.current > b.current ? a : b);
@@ -194,6 +203,16 @@
     render(sorted(filtered));
   }
 
+  function trend(current, avg_7d) {
+    if (avg_7d === null) return '';
+    const pct = (current - avg_7d) / avg_7d * 100;
+    if (pct > 25)  return '<span class="trend up2">⭡</span>';
+    if (pct > 5)   return '<span class="trend up1">↗</span>';
+    if (pct >= -5) return '<span class="trend flat">—</span>';
+    if (pct >= -25)return '<span class="trend down1">↘</span>';
+    return '<span class="trend down2">⭣</span>';
+  }
+
   function render(maps) {
     const grid = document.getElementById('map-grid');
     if (!maps.length) {
@@ -204,6 +223,7 @@
       <a class="map-card" href="map.html?id=${encodeURIComponent(m.id)}">
         <div class="map-name">${m.name}</div>
         <div class="map-price">${fmt(m.current)}</div>
+        ${trend(m.current, m.avg_7d)}
       </a>
     `).join('');
   }

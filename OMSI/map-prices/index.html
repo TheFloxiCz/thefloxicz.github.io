@@ -2,240 +2,396 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>BCS Map Prices</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Space+Mono&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:       #080d14;
-      --bg2:      #0d1520;
-      --bg3:      #111d2e;
-      --border:   #1a3050;
-      --neon:     #00e5a0;
-      --red:      #ff4060;
-      --text:     #c8d8e8;
-      --text-dim: #8aa8c0;
-      --mono:     'Share Tech Mono', monospace;
-      --sans:     'Exo 2', sans-serif;
+      --bg:     #09090f;
+      --card:   #0d1018;
+      --card-h: #131926;
+      --bd:     #1b2235;
+      --gold:   #c4860c;
+      --goldb:  #e8a830;
+      --txt:    #d4dce8;
+      --dim:    #52607a;
+      --grn:    #2aaa72;
+      --red:    #e04050;
+      --mono:   'Space Mono', monospace;
+      --sans:   'Outfit', system-ui, sans-serif;
     }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 400; min-height: 100vh; }
-
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 2rem; height: 56px;
-      background: var(--bg2); border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 100;
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
-    .nav-brand { font-family: var(--mono); font-size: .85rem; color: var(--neon); letter-spacing: .05em; }
-    .nav-brand span { color: var(--text-dim); }
 
-    .hero { padding: 3rem 2rem 2rem; max-width: 1200px; margin: 0 auto; }
-    .hero h1 { font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 700; line-height: 1.15; color: #fff; }
-    .hero h1 em { font-style: normal; color: var(--neon); }
-    .hero p { margin-top: .6rem; color: var(--text-dim); font-size: .9rem; font-family: var(--mono); }
+    #bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    }
 
+    .ui { position: relative; z-index: 1; }
+
+    /* ── Nav ── */
+    nav {
+      height: 50px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
+      background: rgba(9,9,15,.78);
+      border-bottom: 1px solid var(--bd);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .brand { font-family: var(--mono); font-size: .72rem; color: var(--txt); letter-spacing: .04em; }
+    .brand b { color: var(--gold); }
+
+    .ts { font-family: var(--mono); font-size: .68rem; color: var(--dim); }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: 1200px; margin: 0 auto;
+      padding: 4rem 2rem 2.5rem;
+    }
+
+    .hero-sub {
+      font-size: .82rem; font-weight: 600;
+      color: var(--gold); margin-bottom: .65rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700; line-height: 1.08;
+      color: #fff; letter-spacing: -.025em;
+    }
+
+    .hero-meta {
+      margin-top: .65rem;
+      font-family: var(--mono); font-size: .72rem; color: var(--dim);
+    }
+
+    /* ── Controls ── */
     .controls {
       max-width: 1200px; margin: 0 auto;
-      padding: 0 2rem 1.5rem;
-      display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+      padding: 1.5rem 2rem .75rem;
+      display: flex; gap: .75rem; align-items: center;
     }
-    .search-box {
-      flex: 1; min-width: 200px;
-      display: flex; align-items: center; gap: .75rem;
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 4px; padding: .65rem 1rem; transition: border-color .2s;
-    }
-    .search-box:focus-within { border-color: var(--neon); }
-    .search-box svg { flex-shrink: 0; color: var(--text-dim); }
-    .search-box input {
-      background: none; border: none; outline: none;
-      color: var(--text); font-family: var(--sans); font-size: .95rem; width: 100%;
-    }
-    .search-box input::placeholder { color: var(--text-dim); }
 
-    .sort-select {
-      background: var(--bg2); border: 1px solid var(--border);
-      color: var(--text); font-family: var(--mono); font-size: .78rem;
-      padding: .65rem .9rem; border-radius: 4px; cursor: pointer;
+    .search { flex: 1; position: relative; min-width: 180px; }
+
+    .search svg {
+      position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+      color: var(--dim); pointer-events: none;
+    }
+
+    .search input {
+      width: 100%;
+      background: var(--card); border: 1px solid var(--bd);
+      border-radius: 6px;
+      padding: .62rem .85rem .62rem 2.4rem;
+      color: var(--txt); font-family: var(--sans); font-size: .88rem;
       outline: none; transition: border-color .2s;
     }
-    .sort-select:focus, .sort-select:hover { border-color: var(--neon); }
+    .search input::placeholder { color: var(--dim); }
+    .search input:focus { border-color: var(--gold); }
 
-    .stats-bar {
-      max-width: 1200px; margin: 0 auto; padding: 0 2rem 1.5rem;
-      display: flex; gap: 2rem; font-family: var(--mono); font-size: .8rem; color: var(--text-dim);
+    select.sort {
+      background: var(--card); border: 1px solid var(--bd);
+      color: var(--txt); font-family: var(--mono); font-size: .68rem;
+      padding: .62rem .85rem; border-radius: 6px;
+      cursor: pointer; outline: none; transition: border-color .2s;
     }
-    .stats-bar strong { color: var(--neon); }
+    select.sort:hover, select.sort:focus { border-color: var(--gold); }
 
-    .grid-wrap { max-width: 1200px; margin: 0 auto; padding: 0 2rem 4rem; }
-    .map-grid {
+    /* ── Stats ── */
+    .stats {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 2rem 1rem;
+      display: flex; gap: 1.5rem;
+      font-family: var(--mono); font-size: .68rem; color: var(--dim);
+    }
+    .stats strong { color: var(--txt); font-weight: 400; }
+
+    /* ── Grid ── */
+    .grid-wrap {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1px; background: var(--border); border: 1px solid var(--border);
+      gap: 1px; background: var(--bd);
+      border: 1px solid var(--bd); border-radius: 8px; overflow: hidden;
     }
-    .map-card {
-      background: var(--bg2); padding: 1.1rem 1.25rem;
-      cursor: pointer; text-decoration: none; color: inherit;
-      display: flex; flex-direction: column; align-items: center; text-align: center;
-      transition: background .15s; position: relative;
+
+    .card {
+      background: var(--card);
+      padding: 1.2rem 1.35rem;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: .45rem;
+      transition: background .15s;
+      position: relative;
     }
-    .map-card:hover { background: var(--bg3); }
-    .map-card::before {
+    .card:hover { background: var(--card-h); }
+    .card::before {
       content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-      width: 2px; background: var(--neon); opacity: 0; transition: opacity .15s;
+      width: 2px; background: var(--gold);
+      opacity: 0; transition: opacity .15s; pointer-events: none;
     }
-    .map-card:hover::before { opacity: 1; }
+    .card:hover::before { opacity: 1; }
 
-    .map-name {
-      font-size: .95rem; font-weight: 600; color: #fff;
-      width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      margin-bottom: .5rem;
-    }
-    .map-price {
-      font-family: var(--mono); font-size: 1.2rem; color: var(--neon);
-      margin-bottom: .35rem;
-    }
-    .trend {
-      font-size: 1.3rem; line-height: 1;
-    }
-    .trend.up2   { color: #ff4060; }
-    .trend.up1   { color: #ff9040; }
-    .trend.flat  { color: #8aa8c0; }
-    .trend.down1 { color: #80e0a0; }
-    .trend.down2 { color: #00e5a0; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; }
 
-    .state-msg {
-      grid-column: 1/-1; padding: 3rem; text-align: center;
-      color: var(--text-dim); font-family: var(--mono); font-size: .85rem;
+    .cname {
+      font-size: .88rem; font-weight: 600; color: var(--txt);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: calc(100% - 1.8rem);
     }
 
-    body::after {
-      content: ''; position: fixed; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.04) 2px, rgba(0,0,0,.04) 4px);
-      pointer-events: none; z-index: 9999;
+    .cprice {
+      font-family: var(--mono); font-size: 1.25rem; font-weight: 700;
+      color: var(--gold); letter-spacing: -.01em;
     }
+
+    .trend { font-size: .95rem; flex-shrink: 0; line-height: 1; }
+    .trend.up2  { color: var(--red); }
+    .trend.up1  { color: #d87030; }
+    .trend.flat { color: var(--dim); }
+    .trend.dn1  { color: #40b870; }
+    .trend.dn2  { color: var(--grn); }
+
+    .empty {
+      grid-column: 1/-1; padding: 3rem;
+      text-align: center; font-family: var(--mono);
+      font-size: .78rem; color: var(--dim);
+    }
+
+    @media (max-width: 800px) { .grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 520px) {
+      .grid { grid-template-columns: 1fr; }
+      nav { padding: 0 1rem; }
+      .hero, .controls, .stats, .grid-wrap { padding-left: 1rem; padding-right: 1rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { #bg { display: none; } }
   </style>
 </head>
 <body>
+<canvas id="bg"></canvas>
 
-<nav>
-  <div class="nav-brand">BCS<span>/</span>MAP-PRICES</div>
-  <div style="font-family:var(--mono);font-size:.75rem;color:var(--text-dim)" id="last-update"></div>
-</nav>
+<div class="ui">
+  <nav>
+    <div class="brand"><b>BCS</b> / Map Prices</div>
+    <div class="ts" id="ts"></div>
+  </nav>
 
-<div class="hero">
-  <h1>Bus Company Simulator<br><em>Map Price Tracker</em></h1>
-  <p id="hero-sub">Loading data...</p>
-</div>
-
-<div class="controls">
-  <div class="search-box">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-    </svg>
-    <input type="text" id="search" placeholder="Search maps...">
+  <div class="hero">
+    <div class="hero-sub">Bus Company Simulator</div>
+    <h1>Map Price<br>Tracker</h1>
+    <p class="hero-meta" id="hero-meta">Loading data...</p>
   </div>
-  <select class="sort-select" id="sort">
-    <option value="az">Name (A–Z)</option>
-    <option value="za">Name (Z–A)</option>
-    <option value="asc">Price (low–high)</option>
-    <option value="desc">Price (high–low)</option>
-  </select>
-</div>
 
-<div class="stats-bar">
-  <div>Maps: <strong id="stat-total">—</strong></div>
-  <div>Cheapest: <strong id="stat-min">—</strong></div>
-  <div>Most expensive: <strong id="stat-max">—</strong></div>
-</div>
+  <div class="controls">
+    <div class="search">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="search" placeholder="Search maps...">
+    </div>
+    <select class="sort" id="sort">
+      <option value="az">Name A–Z</option>
+      <option value="za">Name Z–A</option>
+      <option value="asc">Price ↑</option>
+      <option value="desc">Price ↓</option>
+    </select>
+  </div>
 
-<div class="grid-wrap">
-  <div class="map-grid" id="map-grid">
-    <div class="state-msg">Loading maps...</div>
+  <div class="stats">
+    <span>Maps: <strong id="s-total">—</strong></span>
+    <span>Cheapest: <strong id="s-min">—</strong></span>
+    <span>Priciest: <strong id="s-max">—</strong></span>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="grid" id="grid">
+      <div class="empty">Loading...</div>
+    </div>
   </div>
 </div>
 
 <script>
+  // ── Parallax star field ────────────────────────────────────────────────────
+  (() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const cvs = document.getElementById('bg');
+    const ctx = cvs.getContext('2d');
+    let W, H, mx = 0, my = 0, cx = 0, cy = 0;
+
+    const r = (a, b) => a + Math.random() * (b - a);
+
+    // Three depth layers of stars
+    const LAYERS = [
+      { n: 110, rMin: .3, rMax: .9,  spd: 14, aMin: .18, aMax: .32 },
+      { n: 60,  rMin: .7, rMax: 1.3, spd: 32, aMin: .30, aMax: .55 },
+      { n: 24,  rMin: 1.1, rMax: 2.2, spd: 62, aMin: .50, aMax: .80 },
+    ];
+
+    // Atmospheric glow blobs
+    const BLOB_DEFS = [
+      { col: '22,58,140',  spd: 20, a: .07 },
+      { col: '80,32,140',  spd: 38, a: .06 },
+      { col: '18,88,115',  spd: 28, a: .05 },
+      { col: '115,68,18',  spd: 46, a: .05 },
+      { col: '42,32,118',  spd: 16, a: .06 },
+    ];
+
+    let stars = [], blobs = [];
+
+    const resize = () => {
+      W = cvs.width  = innerWidth;
+      H = cvs.height = innerHeight;
+
+      stars = LAYERS.flatMap(l =>
+        Array.from({ length: l.n }, () => ({
+          x:   r(0, W),
+          y:   r(0, H),
+          rad: r(l.rMin, l.rMax),
+          spd: l.spd,
+          a:   r(l.aMin, l.aMax),
+        }))
+      );
+
+      blobs = BLOB_DEFS.map(b => ({
+        ...b,
+        x: r(.08, .92) * W,
+        y: r(.08, .92) * H,
+        rad: r(200, 440),
+      }));
+    };
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX / W - .5;
+      my = e.clientY / H - .5;
+    });
+
+    const frame = () => {
+      cx += (mx - cx) * .04;
+      cy += (my - cy) * .04;
+      ctx.clearRect(0, 0, W, H);
+
+      // Blobs first (background glow)
+      blobs.forEach(b => {
+        const px = b.x + cx * b.spd;
+        const py = b.y + cy * b.spd;
+        const g = ctx.createRadialGradient(px, py, 0, px, py, b.rad);
+        g.addColorStop(0, `rgba(${b.col},${b.a})`);
+        g.addColorStop(1, `rgba(${b.col},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(px, py, b.rad, 0, 6.2832); ctx.fill();
+      });
+
+      // Stars on top
+      stars.forEach(s => {
+        const px = s.x + cx * s.spd;
+        const py = s.y + cy * s.spd;
+        ctx.fillStyle = `rgba(200,218,245,${s.a})`;
+        ctx.beginPath(); ctx.arc(px, py, s.rad, 0, 6.2832); ctx.fill();
+      });
+
+      requestAnimationFrame(frame);
+    };
+
+    addEventListener('resize', resize);
+    resize();
+    frame();
+  })();
+
+  // ── App ───────────────────────────────────────────────────────────────────
   const BASE = './data/';
-  let allMaps = [];
-  let query = '';
-  let sortKey = 'az';
+  let allMaps = [], query = '', sortKey = 'az';
+
+  const fmt = p => p.toLocaleString('cs-CZ') + '\u202f€';
+
+  const trendHtml = (cur, avg) => {
+    if (avg == null) return '';
+    const p = (cur - avg) / avg * 100;
+    if (p >  25) return '<span class="trend up2">⭡</span>';
+    if (p >   5) return '<span class="trend up1">↗</span>';
+    if (p >= -5) return '<span class="trend flat">—</span>';
+    if (p >= -25)return '<span class="trend dn1">↘</span>';
+    return '<span class="trend dn2">⭣</span>';
+  };
+
+  const sorted = maps => [...maps].sort((a, b) =>
+    sortKey === 'az'   ? a.name.localeCompare(b.name) :
+    sortKey === 'za'   ? b.name.localeCompare(a.name) :
+    sortKey === 'asc'  ? a.current - b.current :
+                         b.current - a.current
+  );
+
+  const renderMaps = () => {
+    const f = sorted(allMaps.filter(m => m.name.toLowerCase().includes(query)));
+    const grid = document.getElementById('grid');
+    if (!f.length) { grid.innerHTML = '<div class="empty">No maps found.</div>'; return; }
+    grid.innerHTML = f.map(m => `
+      <a class="card" href="map.html?id=${encodeURIComponent(m.id)}">
+        <div class="card-top">
+          <div class="cname">${m.name}</div>
+          ${trendHtml(m.current, m.avg_7d)}
+        </div>
+        <div class="cprice">${fmt(m.current)}</div>
+      </a>`).join('');
+  };
 
   async function load() {
     try {
       const res = await fetch(BASE + 'index.json');
-      const data = await res.json();
-
-      allMaps = Object.entries(data).map(([id, info]) => ({ id, name: info.name, current: info.current, avg_7d: info.avg_7d ?? null }));
-
-      const minM = allMaps.reduce((a, b) => a.current < b.current ? a : b);
-      const maxM = allMaps.reduce((a, b) => a.current > b.current ? a : b);
-
-      document.getElementById('stat-total').textContent = allMaps.length;
-      document.getElementById('stat-min').textContent = `${minM.name} — ${fmt(minM.current)}`;
-      document.getElementById('stat-max').textContent = `${maxM.name} — ${fmt(maxM.current)}`;
-      document.getElementById('hero-sub').textContent = `${allMaps.length} maps · updated daily`;
-      document.getElementById('last-update').textContent = new Date().toLocaleDateString('en-GB');
-
-      renderFiltered();
-    } catch(e) {
-      document.getElementById('map-grid').innerHTML = '<div class="state-msg">Failed to load data.</div>';
+      if (!res.ok) throw 0;
+      const raw = await res.json();
+      allMaps = Object.entries(raw).map(([id, v]) => ({
+        id, name: v.name, current: v.current, avg_7d: v.avg_7d ?? null,
+      }));
+    } catch {
+      // Demo data — remove when deploying with real ./data/index.json
+      allMaps = [
+        { id:'prague',    name:'Prague City Lines',     current:14500, avg_7d:13200 },
+        { id:'berlin',    name:'Berlin Express',        current:18900, avg_7d:19500 },
+        { id:'london',    name:'London Metro',          current:24000, avg_7d:22000 },
+        { id:'vienna',    name:'Vienna Transit',        current:11200, avg_7d:11800 },
+        { id:'warsaw',    name:'Warsaw Routes',         current: 9400, avg_7d: 9400 },
+        { id:'budapest',  name:'Budapest City Lines',   current:10800, avg_7d:12000 },
+        { id:'munich',    name:'Munich Transportation', current:16400, avg_7d:15800 },
+        { id:'amsterdam', name:'Amsterdam Network',     current:20100, avg_7d:18500 },
+        { id:'barcelona', name:'Barcelona Metro',       current:17800, avg_7d:18200 },
+        { id:'rome',      name:'Rome City',             current: 8900, avg_7d: 7800 },
+        { id:'brussels',  name:'Brussels Transit',      current:13300, avg_7d:13300 },
+        { id:'zurich',    name:'Zurich Urban',          current:22500, avg_7d:21000 },
+      ];
     }
-  }
 
-  function fmt(price) {
-    return price.toLocaleString('cs-CZ') + ' €';
-  }
-
-  function sorted(maps) {
-    return [...maps].sort((a, b) => {
-      if (sortKey === 'az')   return a.name.localeCompare(b.name);
-      if (sortKey === 'za')   return b.name.localeCompare(a.name);
-      if (sortKey === 'asc')  return a.current - b.current;
-      if (sortKey === 'desc') return b.current - a.current;
-    });
-  }
-
-  function renderFiltered() {
-    const filtered = allMaps.filter(m => m.name.toLowerCase().includes(query));
-    render(sorted(filtered));
-  }
-
-  function trend(current, avg_7d) {
-    if (avg_7d === null) return '';
-    const pct = (current - avg_7d) / avg_7d * 100;
-    if (pct > 25)  return '<span class="trend up2">⭡</span>';
-    if (pct > 5)   return '<span class="trend up1">↗</span>';
-    if (pct >= -5) return '<span class="trend flat">—</span>';
-    if (pct >= -25)return '<span class="trend down1">↘</span>';
-    return '<span class="trend down2">⭣</span>';
-  }
-
-  function render(maps) {
-    const grid = document.getElementById('map-grid');
-    if (!maps.length) {
-      grid.innerHTML = '<div class="state-msg">No maps found.</div>';
-      return;
-    }
-    grid.innerHTML = maps.map(m => `
-      <a class="map-card" href="map.html?id=${encodeURIComponent(m.id)}">
-        <div class="map-name">${m.name}</div>
-        <div class="map-price">${fmt(m.current)}</div>
-        ${trend(m.current, m.avg_7d)}
-      </a>
-    `).join('');
+    const mn = allMaps.reduce((a,b) => a.current < b.current ? a : b);
+    const mx = allMaps.reduce((a,b) => a.current > b.current ? a : b);
+    document.getElementById('s-total').textContent = allMaps.length;
+    document.getElementById('s-min').textContent   = `${mn.name} · ${fmt(mn.current)}`;
+    document.getElementById('s-max').textContent   = `${mx.name} · ${fmt(mx.current)}`;
+    document.getElementById('hero-meta').textContent = `${allMaps.length} maps · updated daily`;
+    document.getElementById('ts').textContent = new Date().toLocaleDateString('en-GB');
+    renderMaps();
   }
 
   document.getElementById('search').addEventListener('input', e => {
-    query = e.target.value.toLowerCase();
-    renderFiltered();
+    query = e.target.value.toLowerCase(); renderMaps();
   });
-
   document.getElementById('sort').addEventListener('change', e => {
-    sortKey = e.target.value;
-    renderFiltered();
+    sortKey = e.target.value; renderMaps();
   });
 
   load();

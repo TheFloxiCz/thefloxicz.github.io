@@ -289,7 +289,11 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const SEARCH_JSON_URL = "search.json"; // relativní cesta ke search.json
-const MAX_RESULTS = 10;
+function getMaxResults() {
+  const t = parseInt(document.getElementById("inp-transfers").value, 10) || 0;
+  return t === 0 ? 10 : t === 1 ? 5 : 2;
+}
+const MAX_RESULTS = 10; // fallback pro searchEarlier/Later
 const MIN_TRANSFER_WAIT = 3; // minimální čekání na přestup v minutách
 
 const TYPE_STYLES = {
@@ -601,7 +605,7 @@ function search() {
 
   const t0 = performance.now();
   const depTime = toMins(document.getElementById("inp-time").value || "00:00");
-  const all = runSearch(depTime).slice(0, MAX_RESULTS);
+  const all = runSearch(depTime).slice(0, getMaxResults());
   console.log(`[Search] ${(performance.now()-t0).toFixed(0)} ms, nalezeno ${all.length} spojení`);
   renderResults(all, from, to, depTime);
 }
@@ -621,7 +625,7 @@ function searchEarlier() {
 
   // Hledej od půlnoci dopředu, vezmi všechny před firstDep, posledních 5
   const all = runSearch(0).filter(r => diffMins(0, r.dep) < diffMins(0, firstDep));
-  const earlier = all.slice(-MAX_RESULTS);
+  const earlier = all.slice(-getMaxResults());
   if (!earlier.length) return;
   document.getElementById("inp-time").value = fromMins(earlier[0].dep);
   renderResults(earlier, from, to, earlier[0].dep);
@@ -641,7 +645,7 @@ function searchLater() {
   if (lastDep === null) return;
 
   // Hledej od lastDep + 1 min vpřed
-  const all = runSearch(lastDep + 1).slice(0, MAX_RESULTS);
+  const all = runSearch(lastDep + 1).slice(0, getMaxResults());
   if (!all.length) return;
   document.getElementById("inp-time").value = fromMins(all[0].dep);
   renderResults(all, from, to, all[0].dep);
@@ -929,10 +933,15 @@ loadData().then(() => {
 
   // Načti parametry z URL a automaticky spusť vyhledávání
   const params = new URLSearchParams(window.location.search);
-  const fromP = params.get("from");
-  const toP   = params.get("to");
-  const viaP  = params.get("via");
-  const timeP = params.get("time");
+  const fromP      = params.get("from");
+  const toP        = params.get("to");
+  const viaP       = params.get("via");
+  const timeP      = params.get("time");
+  const transfersP = params.get("transfers");
+  if (transfersP !== null) {
+    const sel = document.getElementById("inp-transfers");
+    if (sel) sel.value = transfersP;
+  }
 
   if (fromP) document.getElementById("inp-from").value = fromP;
   if (toP)   document.getElementById("inp-to").value   = toP;

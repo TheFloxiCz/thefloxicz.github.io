@@ -133,13 +133,6 @@ input[type="text"]:focus, input[type="time"]:focus {
 .btn-toggle { background: none; border: none; color: var(--primary); font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; padding: 0; margin-top: 8px; }
 .btn-toggle:hover { text-decoration: underline; }
 
-.nav-results { display: flex; gap: 10px; margin-bottom: 12px; }
-.btn-nav {
-  background: var(--card-bg); border: 1px solid var(--border); color: var(--text);
-  padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.2s; flex: 1; text-align: center;
-}
-.btn-nav:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
 .no-results { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 16px; }
 .loading { text-align: center; padding: 20px; color: var(--text-muted); font-size: 15px; }
 .error-msg { background: #ffe5e5; border-left: 4px solid #c0392b; color: #8b0000; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-weight: 600; }
@@ -230,7 +223,7 @@ footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const SEARCH_JSON_URL = "search.json"; // relativní cesta ke search.json
-function getMaxResults() { const t = parseInt(document.getElementById("inp-transfers").value, 10) || 0; return t === 0 ? 10 : t === 1 ? 5 : 2; }
+const MAX_RESULTS = 5;
 const MIN_TRANSFER_WAIT = 3; // minimální čekání na přestup v minutách
 
 const TYPE_STYLES = {
@@ -474,7 +467,7 @@ function search() {
     return true;
   });
 
-  all = all.slice(0, getMaxResults());
+  all = all.slice(0, MAX_RESULTS);
   renderResults(all, from, to);
 }
 
@@ -491,12 +484,7 @@ function renderResults(results, from, to) {
     return;
   }
 
-  area.innerHTML = `
-    <div class="nav-results">
-      <button class="btn-nav" onclick="searchEarlier()">◀ Earlier</button>
-      <button class="btn-nav" onclick="searchLater()">Later ▶</button>
-    </div>
-    <div class="results-header">Found ${results.length} nearest connection${results.length > 1 ? "s" : ""}:</div>`;
+  area.innerHTML = `<div class="results-header">Found ${results.length} connection${results.length > 1 ? "s" : ""}:</div>`;
 
   results.forEach((r, ri) => {
     const depStr = fromMins(r.dep);
@@ -620,40 +608,6 @@ btn.onclick = () => {
   applyTheme(!isDark);
 };
 
-// ─── EARLIER / LATER ─────────────────────────────────────────────────────────
-function searchEarlier() {
-  if (!dataLoaded) return;
-  const firstCard = document.querySelector(".result-card");
-  if (!firstCard) return;
-  const depText = firstCard.querySelector(".result-time")?.childNodes[0]?.textContent?.trim();
-  if (!depText) return;
-  const firstDep = toMins(depText);
-  if (firstDep === null) return;
-
-  // Spusť search od půlnoci, filtruj jen spoje před firstDep
-  const saved = document.getElementById("inp-time").value;
-  document.getElementById("inp-time").value = "00:00";
-  // Dočasně navýšíme limit abychom dostali všechny spoje před firstDep
-  const origSearch = window._searchLimit;
-  window._searchBefore = firstDep;
-  search();
-  document.getElementById("inp-time").value = saved;
-  window._searchBefore = null;
-}
-
-function searchLater() {
-  if (!dataLoaded) return;
-  const cards = document.querySelectorAll(".result-card");
-  if (!cards.length) return;
-  const depText = cards[cards.length-1].querySelector(".result-time")?.childNodes[0]?.textContent?.trim();
-  if (!depText) return;
-  const lastDep = toMins(depText);
-  if (lastDep === null) return;
-  const next = fromMins((lastDep + 1) % 1440);
-  document.getElementById("inp-time").value = next;
-  search();
-}
-
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById("btn-search").disabled = true;
 document.getElementById("results-area").innerHTML = `<div class="loading">Loading timetable data…</div>`;
@@ -679,18 +633,7 @@ loadData().then(() => {
   if (toP)   document.getElementById("inp-to").value   = toP;
   if (viaP)  document.getElementById("inp-via").value  = viaP;
   if (timeP) document.getElementById("inp-time").value = timeP;
-  const transfersP = params.get("transfers");
-  if (transfersP !== null) {
-    const sel = document.getElementById("inp-transfers");
-    if (sel) sel.value = transfersP;
-  }
 
-  // Pokud čas nepřišel z URL, předvyplň aktuální čas
-  if (!timeP) {
-    const now = new Date();
-    document.getElementById("inp-time").value =
-      String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
-  }
   if (fromP && toP) search();
 });
 </script>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SimRail – Connection Search</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5; --card-bg: #ffffff; --text: #1a1a2e; --text-muted: #6b7280;
+  --primary: #1d6fa4; --primary-light: #e8f4fd; --border: #e5e7eb;
+  --shadow: rgba(0,0,0,0.06); --input-bg: #ffffff;
+  --result-bg: #ffffff; --result-border: #e5e7eb;
+  --badge-passenger-bg: #0011FF; --badge-passenger-fg: #ffffff;
+  --badge-freight-bg: #FF9EF6; --badge-freight-fg: #000000;
+  --badge-other-bg: #555555; --badge-other-fg: #ffffff;
+  --transfer-color: #f59e0b;
+}
+[data-theme="dark"] {
+  --bg: #0d1117; --card-bg: #161b22; --text: #e6edf3; --text-muted: #8b949e;
+  --primary: #58a6ff; --primary-light: #1a2333; --border: #30363d;
+  --shadow: rgba(0,0,0,0.4); --input-bg: #0d1117;
+  --result-bg: #161b22; --result-border: #30363d;
+}
+* { font-family: 'Barlow Semi Condensed', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px 20px; transition: background 0.2s, color 0.2s; }
+.container { max-width: 860px; margin: 0 auto; }
+
+/* TOP BAR */
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 18px; border-bottom: 2px solid var(--border); }
+h1 { font-size: 32px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+h1 span { color: var(--primary); }
+.btn-theme { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+.btn-theme:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+/* BACK LINK */
+.back-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: #ffffff; background: #2c3e50; padding: 8px 18px; border-radius: 50px; font-weight: 600; font-size: 15px; margin-bottom: 20px; transition: background 0.2s; }
+.back-link:hover { background: #34495e; }
+
+/* SEARCH CARD */
+.search-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 24px; }
+.search-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-row-options { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 20px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; position: relative; }
+.field label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+
+input[type="text"], input[type="time"] {
+  background: var(--input-bg); border: 1.5px solid var(--border); color: var(--text);
+  padding: 10px 14px; border-radius: 8px; font-size: 15px; font-family: inherit;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+}
+input[type="text"]:focus, input[type="time"]:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,111,164,0.12);
+}
+
+/* AUTOCOMPLETE */
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+  background: var(--card-bg); border: 1.5px solid var(--primary); border-top: none;
+  border-radius: 0 0 8px 8px; max-height: 220px; overflow-y: auto;
+  box-shadow: 0 4px 16px var(--shadow); display: none;
+}
+.autocomplete-list.open { display: block; }
+.autocomplete-item {
+  padding: 8px 14px; cursor: pointer; font-size: 14px; transition: background 0.1s;
+}
+.autocomplete-item:hover, .autocomplete-item.active { background: var(--primary-light); color: var(--primary); }
+
+/* CHECKBOXES */
+.checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 15px; font-weight: 600; user-select: none; }
+.checkbox-group input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; accent-color: var(--primary); }
+
+/* TRANSFERS */
+.field-transfers { display: flex; flex-direction: column; gap: 5px; }
+.field-transfers label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.field-transfers select {
+  background: var(--input-bg); border: 1.5px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 8px; font-size: 15px; font-family: inherit;
+  outline: none; transition: border-color 0.2s; cursor: pointer;
+}
+.field-transfers select:focus { border-color: var(--primary); }
+
+/* SEARCH BUTTON */
+.btn-search {
+  background: var(--primary); color: #fff; border: none; padding: 12px 32px;
+  border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.2s; width: 100%;
+}
+.btn-search:hover { opacity: 0.88; }
+.btn-search:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* RESULTS */
+.results-header { font-size: 18px; font-weight: 700; margin-bottom: 14px; color: var(--text-muted); }
+.result-card {
+  background: var(--result-bg); border: 1px solid var(--result-border);
+  border-radius: 10px; padding: 16px 20px; margin-bottom: 10px;
+  box-shadow: 0 1px 6px var(--shadow); transition: border-color 0.2s;
+}
+.result-card:hover { border-color: var(--primary); }
+
+.result-main { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.result-time { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 120px; }
+.result-time .arr { color: var(--text-muted); font-size: 20px; }
+.result-arrow { font-size: 18px; color: var(--text-muted); }
+.result-duration { font-size: 14px; color: var(--text-muted); font-weight: 600; min-width: 70px; }
+
+.result-trains { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.train-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--primary-light); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px; font-size: 14px; font-weight: 600;
+}
+.cat-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-weight: 700; font-size: 12px;
+}
+.transfer-label {
+  display: flex; align-items: center; gap: 6px; font-size: 13px;
+  color: var(--transfer-color); font-weight: 700; padding: 4px 8px;
+  border: 1px dashed var(--transfer-color); border-radius: 6px;
+}
+
+.result-stops { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
+.result-stops.open { display: block; }
+.stop-row { display: flex; gap: 12px; font-size: 13px; padding: 2px 0; }
+.stop-time { font-variant-numeric: tabular-nums; min-width: 90px; color: var(--text-muted); font-weight: 600; }
+.stop-name { flex: 1; }
+.stop-name.transfer { color: var(--transfer-color); font-weight: 700; }
+.btn-toggle { background: none; border: none; color: var(--primary); font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; padding: 0; margin-top: 8px; }
+.btn-toggle:hover { text-decoration: underline; }
+
+.no-results { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 16px; }
+.loading { text-align: center; padding: 20px; color: var(--text-muted); font-size: 15px; }
+.error-msg { background: #ffe5e5; border-left: 4px solid #c0392b; color: #8b0000; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-weight: 600; }
+
+/* FOOTER */
+footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted); }
+footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr 1fr; }
+  h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <h1>SimRail <span>Connections</span></h1>
+    <button class="btn-theme" id="theme-toggle">🌙 Dark Mode</button>
+  </div>
+
+  <a href="https://thefloxicz.github.io/SR/timetables/" class="back-link">
+    ← Back to Timetables
+  </a>
+
+  <div class="search-card">
+    <h2>🔍 Find Connection</h2>
+
+    <div class="form-grid">
+      <div class="field" id="wrap-from">
+        <label>From</label>
+        <input type="text" id="inp-from" placeholder="Departure station..." autocomplete="off">
+        <div class="autocomplete-list" id="ac-from"></div>
+      </div>
+      <div class="field" id="wrap-to">
+        <label>To</label>
+        <input type="text" id="inp-to" placeholder="Arrival station..." autocomplete="off">
+        <div class="autocomplete-list" id="ac-to"></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field" id="wrap-via">
+        <label>Via (optional)</label>
+        <input type="text" id="inp-via" placeholder="Intermediate station..." autocomplete="off">
+        <div class="autocomplete-list" id="ac-via"></div>
+      </div>
+      <div class="field">
+        <label>Departure from</label>
+        <input type="time" id="inp-time" value="00:00">
+      </div>
+      <div class="field-transfers">
+        <label>Max transfers</label>
+        <select id="inp-transfers">
+          <option value="0">Direct only</option>
+          <option value="1">Max 1</option>
+          <option value="2" selected>Max 2</option>
+          <option value="3">Max 3</option>
+          <option value="5">Max 5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-options">
+      <label class="checkbox-group">
+        <input type="checkbox" id="chk-passenger" checked>
+        Passenger trains
+      </label>
+      <label class="checkbox-group">
+        <input type="checkbox" id="chk-freight" checked>
+        Freight &amp; other trains
+      </label>
+    </div>
+
+    <button class="btn-search" id="btn-search">Search</button>
+  </div>
+
+  <div id="results-area"></div>
+
+</div>
+
+<footer>
+  &copy; 2026 <strong>TheFloxiCz</strong> &nbsp;·&nbsp; SimRail Connection Search
+</footer>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const SEARCH_JSON_URL = "search.json"; // relativní cesta ke search.json
+const MAX_RESULTS = 5;
+const MIN_TRANSFER_WAIT = 3; // minimální čekání na přestup v minutách
+
+const TYPE_STYLES = {
+  "ECE":{"bg":"#3AFFFB","fg":"#000000"}, "ECJ":{"bg":"#3AFFFB","fg":"#000000"},
+  "EIE":{"bg":"#0011FF","fg":"#FFFFFF"}, "EIJ":{"bg":"#0011FF","fg":"#FFFFFF"},
+  "MPE":{"bg":"#0094FF","fg":"#FFFFFF"}, "MPJ":{"bg":"#0094FF","fg":"#FFFFFF"},
+  "MHE":{"bg":"#000000","fg":"#FFFFFF"}, "MHJ":{"bg":"#000000","fg":"#FFFFFF"},
+  "MOE":{"bg":"#4CFF00","fg":"#000000"}, "MOJ":{"bg":"#4CFF00","fg":"#000000"},
+  "RPJ":{"bg":"#007F0E","fg":"#FFFFFF"}, "RPP":{"bg":"#007F0E","fg":"#FFFFFF"},
+  "ROJ":{"bg":"#D9FF99","fg":"#000000"}, "ROE":{"bg":"#D9FF99","fg":"#000000"},
+  "RAJ":{"bg":"#606060","fg":"#FFFFFF"},
+  "PWE":{"bg":"#FFE0C6","fg":"#000000"}, "PWJ":{"bg":"#FFE0C6","fg":"#000000"},
+  "TGE":{"bg":"#FF0000","fg":"#FFFFFF"},
+  "TRE":{"bg":"#FF6A00","fg":"#000000"},
+  "TDE":{"bg":"#FF9EF6","fg":"#000000"},
+  "TME":{"bg":"#008080","fg":"#FFFFFF"},
+  "TNE":{"bg":"#FF7F7F","fg":"#000000"},
+  "TKE":{"bg":"#FFFF00","fg":"#000000"}, "TKP":{"bg":"#FFFF00","fg":"#000000"},
+  "LPE":{"bg":"#E649FF","fg":"#FFFFFF"},
+  "LTE":{"bg":"#B200FF","fg":"#FFFFFF"},
+  "ZNE":{"bg":"#808080","fg":"#FFFFFF"},
+  "ZUE":{"bg":"#808080","fg":"#FFFFFF"},
+  "TSE":{"bg":"#FF2B1C","fg":"#FFFFFF"},
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let allTrains = [];
+let stations = [];
+let dataLoaded = false;
+
+// ─── DATA LOADING ─────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch(SEARCH_JSON_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allTrains = await res.json();
+    // Sestav seznam unikátních stanic ze zastávek
+    const stationSet = new Set();
+    for (const train of allTrains) {
+      for (const stop of train.stops) {
+        if (!stop.p) stationSet.add(stop.s); // jen neplynové
+      }
+    }
+    stations = Array.from(stationSet).sort();
+    dataLoaded = true;
+    document.getElementById("btn-search").disabled = false;
+  } catch (e) {
+    document.getElementById("results-area").innerHTML =
+      `<div class="error-msg">⚠️ Could not load search.json: ${e.message}. Make sure the file exists next to this HTML.</div>`;
+  }
+}
+
+// ─── TIME UTILS ──────────────────────────────────────────────────────────────
+function toMins(hhmm) {
+  if (!hhmm) return null;
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+function fromMins(mins) {
+  // wraps > 24h
+  const m = ((mins % 1440) + 1440) % 1440;
+  return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+}
+function diffMins(a, b) {
+  // b - a, handles midnight wrap (max 23h59)
+  let d = b - a;
+  if (d < 0) d += 1440;
+  return d;
+}
+function formatDuration(mins) {
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+// ─── STOP INDEX ──────────────────────────────────────────────────────────────
+function stopIndex(train, station) {
+  return train.stops.findIndex(s => s.s === station);
+}
+function stopDep(stop) { return stop.d || stop.a; }
+function stopArr(stop) { return stop.a || stop.d; }
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+function search() {
+  if (!dataLoaded) return;
+
+  const from   = document.getElementById("inp-from").value.trim();
+  const to     = document.getElementById("inp-to").value.trim();
+  const via    = document.getElementById("inp-via").value.trim();
+  const timeStr = document.getElementById("inp-time").value || "00:00";
+  const maxTransfers = parseInt(document.getElementById("inp-transfers").value, 10);
+  const wantPassenger = document.getElementById("chk-passenger").checked;
+  const wantFreight   = document.getElementById("chk-freight").checked;
+
+  if (!from || !to) {
+    showError("Please fill in From and To fields.");
+    return;
+  }
+  if (from === to) {
+    showError("From and To must be different stations.");
+    return;
+  }
+
+  const depTime = toMins(timeStr);
+
+  // Filtr vlaků dle kategorie
+  const allowed = t => {
+    if (t.category === "passenger") return wantPassenger;
+    return wantFreight; // freight + other
+  };
+
+  const eligibleTrains = allTrains.filter(allowed);
+
+  // ── PŘÍMÉ SPOJE ──
+  const directResults = [];
+  for (const train of eligibleTrains) {
+    const idxFrom = stopIndex(train, from);
+    const idxTo   = stopIndex(train, to);
+    if (idxFrom === -1 || idxTo === -1) continue;
+    if (idxFrom >= idxTo) continue; // špatný směr
+
+    // Via check
+    if (via) {
+      const idxVia = stopIndex(train, via);
+      if (idxVia === -1 || idxVia <= idxFrom || idxVia >= idxTo) continue;
+    }
+
+    const depStop = train.stops[idxFrom];
+    const arrStop = train.stops[idxTo];
+    const dep = toMins(stopDep(depStop));
+    const arr = toMins(stopArr(arrStop));
+    if (dep === null || arr === null) continue;
+    if (diffMins(depTime, dep) > 1439) continue; // ve stejném dni nebo druhý den
+
+    directResults.push({
+      legs: [{ train, from: idxFrom, to: idxTo }],
+      dep, arr,
+      duration: diffMins(dep, arr),
+      transfers: 0,
+    });
+  }
+
+  // ── PŘESTUPNÍ SPOJE (BFS do maxTransfers úrovní) ──
+  let transferResults = [];
+
+  if (maxTransfers > 0) {
+    // Indexy: zastávka → vlaky které tam staví
+    const stationTrains = new Map();
+    for (const train of eligibleTrains) {
+      for (let i = 0; i < train.stops.length; i++) {
+        const st = train.stops[i].s;
+        if (!stationTrains.has(st)) stationTrains.set(st, []);
+        stationTrains.get(st).push({ train, idx: i });
+      }
+    }
+
+    // Iterativní prohledávání — každý „stav" je: (trainIdxUsed, transferStations[], depTime, legs[])
+    // Začínáme z `from` se všemi vlaky odtud
+    function bfs(currentFrom, currentDepTime, legs, usedTrainNos, depth) {
+      if (depth > maxTransfers) return;
+      const entries = stationTrains.get(currentFrom) || [];
+      for (const { train, idx: idxFrom } of entries) {
+        if (usedTrainNos.has(train.no)) continue;
+        if (!allowed(train)) continue;
+
+        const depStop = train.stops[idxFrom];
+        const dep = toMins(stopDep(depStop));
+        if (dep === null) continue;
+        const wait = diffMins(currentDepTime, dep);
+        if (wait < (legs.length === 0 ? 0 : MIN_TRANSFER_WAIT)) continue;
+        if (wait > 1439) continue; // déle než 24h čekání
+
+        // Projdi všechny stanice za tímto indexem
+        for (let idxTo = idxFrom + 1; idxTo < train.stops.length; idxTo++) {
+          const arrStop = train.stops[idxTo];
+          const arrSt   = arrStop.s;
+          const arr     = toMins(stopArr(arrStop));
+          if (arr === null) continue;
+
+          // Via check — musí projít přes via v prvním přímém vlaku nebo cestou
+          if (via && legs.length === 0) {
+            // Zkontroluj zda train projíždí přes via
+            const idxVia = stopIndex(train, via);
+            if (idxVia !== -1 && idxVia > idxFrom && idxVia <= idxTo) {
+              // ok
+            } else if (idxVia !== -1) {
+              // via je za to
+            }
+            // simplified: přes via se kontroluje globálně dole
+          }
+
+          const newLegs = [...legs, { train, from: idxFrom, to: idxTo }];
+
+          if (arrSt === to) {
+            // Máme kompletní spoj
+            const firstDep = toMins(stopDep(newLegs[0].train.stops[newLegs[0].from]));
+            const dur = diffMins(firstDep, arr);
+
+            // Pokud je via, zkontroluj že někde v nohou projíždí
+            if (via) {
+              const allStops = newLegs.flatMap(l =>
+                l.train.stops.slice(l.from, l.to + 1).map(s => s.s)
+              );
+              if (!allStops.includes(via)) continue;
+            }
+
+            transferResults.push({
+              legs: newLegs,
+              dep: firstDep,
+              arr,
+              duration: dur,
+              transfers: newLegs.length - 1,
+            });
+          } else if (depth < maxTransfers) {
+            // Zkus přestoupit v arrSt
+            bfs(arrSt, arr, newLegs, new Set([...usedTrainNos, train.no]), depth + 1);
+          }
+        }
+      }
+    }
+
+    bfs(from, depTime, [], new Set(), 0);
+  }
+
+  // ── MERGE + SORT + DEDUPLICATE ──
+  let all = [...directResults, ...transferResults];
+
+  // Seřaď dle odjezdu (od zadaného času)
+  all.sort((a, b) => {
+    const da = diffMins(depTime, a.dep);
+    const db = diffMins(depTime, b.dep);
+    if (da !== db) return da - db;
+    return a.duration - b.duration; // kratší spoj přednostně
+  });
+
+  // Deduplika — stejná kombinace čísel vlaků a stanic
+  const seen = new Set();
+  all = all.filter(r => {
+    const key = r.legs.map(l => `${l.train.no}:${l.from}-${l.to}`).join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  all = all.slice(0, MAX_RESULTS);
+  renderResults(all, from, to);
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function badgeHTML(type) {
+  const s = TYPE_STYLES[type] || { bg: "#555", fg: "#fff" };
+  return `<span class="cat-badge" style="background:${s.bg};color:${s.fg}">${type}</span>`;
+}
+
+function renderResults(results, from, to) {
+  const area = document.getElementById("results-area");
+  if (results.length === 0) {
+    area.innerHTML = `<div class="no-results">No connections found. Try adjusting the time or increasing transfers.</div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="results-header">Found ${results.length} connection${results.length > 1 ? "s" : ""}:</div>`;
+
+  results.forEach((r, ri) => {
+    const depStr = fromMins(r.dep);
+    const arrStr = fromMins(r.arr);
+    const card = document.createElement("div");
+    card.className = "result-card";
+
+    // Main row
+    const trainsHTML = r.legs.map((leg, li) => {
+      const t = leg.train;
+      const chip = `<div class="train-chip">${badgeHTML(t.type)} ${t.no}</div>`;
+      if (li < r.legs.length - 1) {
+        const transferSt = t.stops[leg.to].s;
+        const arrT = fromMins(toMins(stopArr(t.stops[leg.to])));
+        const nextDep = fromMins(toMins(stopDep(r.legs[li+1].train.stops[r.legs[li+1].from])));
+        return chip + `<div class="transfer-label">⇄ ${transferSt}<br><small>${arrT} → ${nextDep}</small></div>`;
+      }
+      return chip;
+    }).join("");
+
+    card.innerHTML = `
+      <div class="result-main">
+        <div class="result-time">${depStr} <span class="arr">→ ${arrStr}</span></div>
+        <div class="result-duration">${formatDuration(r.duration)}</div>
+        ${r.transfers > 0 ? `<div style="font-size:13px;color:var(--transfer-color);font-weight:700">${r.transfers} transfer${r.transfers > 1 ? "s" : ""}</div>` : ""}
+      </div>
+      <div class="result-trains">${trainsHTML}</div>
+      <button class="btn-toggle" data-ri="${ri}">▼ Show stops</button>
+      <div class="result-stops" id="stops-${ri}"></div>
+    `;
+
+    // Naplnění zastávek (lazy)
+    card.querySelector(".btn-toggle").addEventListener("click", function() {
+      const panel = document.getElementById(`stops-${ri}`);
+      if (panel.classList.contains("open")) {
+        panel.classList.remove("open");
+        this.textContent = "▼ Show stops";
+        return;
+      }
+      if (!panel._built) {
+        let html = "";
+        r.legs.forEach((leg, li) => {
+          const stops = leg.train.stops.slice(leg.from, leg.to + 1);
+          stops.forEach((stop, si) => {
+            const isTransfer = si === stops.length - 1 && li < r.legs.length - 1;
+            const nameClass = isTransfer ? "stop-name transfer" : "stop-name";
+            const dep = stopDep(stop), arr = stopArr(stop);
+            const timeStr = dep && arr && dep !== arr ? `${arr} / ${dep}` : (dep || arr || "—");
+            html += `<div class="stop-row"><div class="stop-time">${timeStr}</div><div class="${nameClass}">${stop.s}</div></div>`;
+          });
+          if (li < r.legs.length - 1) {
+            html += `<div class="stop-row" style="padding:4px 0 2px 0;"><div class="stop-time"></div><div class="stop-name" style="color:var(--text-muted);font-style:italic;font-size:12px">↳ Transfer — ${r.legs[li+1].train.type} ${r.legs[li+1].train.no}</div></div>`;
+          }
+        });
+        panel.innerHTML = html;
+        panel._built = true;
+      }
+      panel.classList.add("open");
+      this.textContent = "▲ Hide stops";
+    });
+
+    area.appendChild(card);
+  });
+}
+
+function showError(msg) {
+  document.getElementById("results-area").innerHTML = `<div class="error-msg">⚠️ ${msg}</div>`;
+}
+
+// ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+function setupAutocomplete(inputId, listId) {
+  const inp = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  let activeIdx = -1;
+
+  inp.addEventListener("input", () => {
+    const val = inp.value.trim().toLowerCase();
+    if (!val || !dataLoaded) { list.classList.remove("open"); return; }
+    const matches = stations.filter(s => s.toLowerCase().includes(val)).slice(0, 10);
+    if (!matches.length) { list.classList.remove("open"); return; }
+    activeIdx = -1;
+    list.innerHTML = matches.map((s, i) =>
+      `<div class="autocomplete-item" data-val="${s}">${s}</div>`
+    ).join("");
+    list.classList.add("open");
+    list.querySelectorAll(".autocomplete-item").forEach(item => {
+      item.addEventListener("mousedown", e => {
+        inp.value = e.target.dataset.val;
+        list.classList.remove("open");
+      });
+    });
+  });
+
+  inp.addEventListener("keydown", e => {
+    const items = list.querySelectorAll(".autocomplete-item");
+    if (!items.length) return;
+    if (e.key === "ArrowDown") { activeIdx = Math.min(activeIdx + 1, items.length - 1); }
+    else if (e.key === "ArrowUp") { activeIdx = Math.max(activeIdx - 1, 0); }
+    else if (e.key === "Enter" && activeIdx >= 0) {
+      inp.value = items[activeIdx].dataset.val;
+      list.classList.remove("open");
+      e.preventDefault();
+    } else return;
+    items.forEach((it, i) => it.classList.toggle("active", i === activeIdx));
+    e.preventDefault();
+  });
+
+  inp.addEventListener("blur", () => setTimeout(() => list.classList.remove("open"), 150));
+}
+
+// ─── DARK MODE ────────────────────────────────────────────────────────────────
+const btn = document.getElementById("theme-toggle");
+const applyTheme = dark => {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  btn.textContent = dark ? "☀️ Light Mode" : "🌙 Dark Mode";
+};
+applyTheme(localStorage.getItem("theme") === "dark");
+btn.onclick = () => {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  localStorage.setItem("theme", isDark ? "light" : "dark");
+  applyTheme(!isDark);
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById("btn-search").disabled = true;
+document.getElementById("results-area").innerHTML = `<div class="loading">Loading timetable data…</div>`;
+
+setupAutocomplete("inp-from", "ac-from");
+setupAutocomplete("inp-to",   "ac-to");
+setupAutocomplete("inp-via",  "ac-via");
+
+document.getElementById("btn-search").addEventListener("click", search);
+document.getElementById("inp-time").addEventListener("keydown", e => { if (e.key === "Enter") search(); });
+
+loadData().then(() => {
+  document.getElementById("results-area").innerHTML = "";
+
+  // Načti parametry z URL a automaticky spusť vyhledávání
+  const params = new URLSearchParams(window.location.search);
+  const fromP = params.get("from");
+  const toP   = params.get("to");
+  const viaP  = params.get("via");
+  const timeP = params.get("time");
+
+  if (fromP) document.getElementById("inp-from").value = fromP;
+  if (toP)   document.getElementById("inp-to").value   = toP;
+  if (viaP)  document.getElementById("inp-via").value  = viaP;
+  if (timeP) document.getElementById("inp-time").value = timeP;
+
+  if (fromP && toP) search();
+});
+</script>
+</body>
+</html>

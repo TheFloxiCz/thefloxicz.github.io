@@ -99,84 +99,6 @@
         }
         .info-panel-line { flex: 1; height: 1px; background: var(--border); }
 
-        /* CONNECTION SEARCH */
-        .conn-search-section {
-            margin-bottom: 28px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 22px 28px;
-            box-shadow: 0 2px 12px var(--shadow);
-        }
-        .conn-search-title {
-            font-size: 14px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .conn-search-title::after {
-            content: ''; flex: 1; height: 1px; background: var(--border);
-        }
-        .conn-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 0.6fr 0.7fr auto auto;
-            gap: 10px;
-            align-items: end;
-        }
-        .conn-field select {
-            background: var(--bg); border: 1.5px solid var(--border); color: var(--text);
-            padding: 9px 8px; border-radius: 8px; font-size: 13px; font-family: inherit;
-            outline: none; cursor: pointer; width: 100%;
-            transition: border-color 0.2s;
-        }
-        .conn-field select:focus { border-color: var(--primary); }
-        .conn-field { display: flex; flex-direction: column; gap: 4px; position: relative; }
-        .conn-field label {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; color: var(--text-muted);
-        }
-        .conn-field input {
-            background: var(--bg); border: 1.5px solid var(--border); color: var(--text);
-            padding: 9px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
-            outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
-        }
-        .conn-field input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(29,111,164,0.12);
-        }
-        .conn-field input[type="time"] { cursor: pointer; }
-        .conn-btn {
-            background: var(--primary); color: #fff; border: none;
-            padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 700;
-            cursor: pointer; font-family: inherit; white-space: nowrap;
-            transition: opacity 0.2s; height: fit-content;
-        }
-        .conn-btn:hover { opacity: 0.88; }
-        .conn-ac-list {
-            position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
-            background: var(--card-bg); border: 1.5px solid var(--primary);
-            border-top: none; border-radius: 0 0 8px 8px;
-            max-height: 200px; overflow-y: auto;
-            box-shadow: 0 4px 16px var(--shadow); display: none;
-        }
-        .conn-ac-list.open { display: block; }
-        .conn-ac-item {
-            padding: 7px 12px; cursor: pointer; font-size: 13px;
-        }
-        .conn-ac-item:hover, .conn-ac-item.active {
-            background: var(--primary-light); color: var(--primary);
-        }
-        @media (max-width: 900px) {
-            .conn-form-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .conn-btn { grid-column: span 2; }
-        }
-        @media (max-width: 1100px) and (min-width: 901px) {
-            .conn-form-grid {
-                grid-template-columns: 1fr 1fr 0.5fr 0.6fr auto auto;
-            }
-        }
-
         /* SEARCH */
         .search-section { margin-bottom: 32px; }
         .search-wrapper {
@@ -347,42 +269,7 @@
         </div>
 
         <!-- NOVINKY (vloženo při generaci z novinky.txt) -->
-        <div class="novinky-section"><div class="novinky-titulek">📢 26.11.2026 | Minor timetable changes in now live.</div><div class="novinky-text">EXPERIMENTAL: You can now use Connection Search! This function is experimental and can be removed any time.</div></div>
-
-        <!-- VYHLEDÁVAČ SPOJENÍ -->
-        <div class="conn-search-section">
-            <div class="conn-search-title">🔍 Connection Search</div>
-            <div class="conn-form-grid">
-                <div class="conn-field" id="cf-from">
-                    <label>From</label>
-                    <input type="text" id="cf-inp-from" placeholder="Departure station..." autocomplete="off">
-                    <div class="conn-ac-list" id="cf-ac-from"></div>
-                </div>
-                <div class="conn-field" id="cf-to">
-                    <label>To</label>
-                    <input type="text" id="cf-inp-to" placeholder="Arrival station..." autocomplete="off">
-                    <div class="conn-ac-list" id="cf-ac-to"></div>
-                </div>
-                <div class="conn-field" id="cf-via">
-                    <label>Via</label>
-                    <input type="text" id="cf-inp-via" placeholder="Via..." autocomplete="off">
-                    <div class="conn-ac-list" id="cf-ac-via"></div>
-                </div>
-                <div class="conn-field">
-                    <label>Transfers</label>
-                    <select id="cf-inp-transfers">
-                        <option value="0">Direct</option>
-                        <option value="1">Max 1</option>
-                        <option value="2" selected>Max 2</option>
-                    </select>
-                </div>
-                <div class="conn-field">
-                    <label>Departure time</label>
-                    <input type="time" id="cf-inp-time">
-                </div>
-                <button class="conn-btn" onclick="connSearch()">Search →</button>
-            </div>
-        </div>
+        <div class="novinky-section"><div class="novinky-titulek">📢 26.11.2026 | Minor timetable changes in now live.</div><div class="novinky-text"></div></div>
 
         <!-- INFO PANEL – načítá se z info.json -->
         <div id="info-panel"></div>
@@ -414,82 +301,6 @@
     </div>
 
     <script>
-        /* ── CONNECTION SEARCH ───────────────────────────────────── */
-        const STATIONS = ["Aleksandrów Kujawski", "Baby", "Baranówka", "Bednary", "Bedoń", "Bełchów", "Biała Rawska", "Bobrowniki", "Boksycka", "Borowa Górka", "Borszewice", "Boża Wola", "Bratoszewice", "Brody Iłżeckie", "Brwinów", "Bukowno", "Bukowno Przymiarki", "Bydgoszcz Leśna", "Bydgoszcz Wschód", "Będzin", "Będzin Ksawera", "Będzin Miasto", "Břeclav", "Charsznica", "Chechło", "Chociszew", "Chrusty Nowe", "Chruszczobród", "Chrząstowice Olkuskie", "Częstochowa Towarowa CTB", "Dionizów", "Dobroń", "Domaniewice", "Domaniewice Centrum", "Dorota", "Dziadówki", "Dąbrowa Górnicza", "Dąbrowa Górnicza Gołonóg", "Dąbrowa Górnicza Huta Katowice", "Dąbrowa Górnicza Pogoria", "Dąbrowa Górnicza Południowa", "Dąbrowa Górnicza Sikorka", "Dąbrowa Górnicza Strzemieszyce", "Dąbrowa Górnicza Towarowa", "Dąbrowa Górnicza Wschodnia", "Dąbrowa Górnicza Ząbkowice", "Dąbrowa Górnicza Ząbkowice DZA", "Dąbrowice Skierniewickie", "Dębica", "Dłubnia", "Frankfurt (Oder)", "Gajewniki", "Gajówka", "Gajówka APO", "Gawrony", "Gałkówek", "Glinnik", "Glinnik Wieś", "Gniewięcin APO", "Goszcza", "Grodzisk Mazowiecki", "Grotniki", "Góra Włodowska", "Głowno", "Głowno Północne", "Hodonín", "Hranice na Moravě", "Idzikowice", "Izabelów", "Jackowice", "Jaktorów", "Jarosty", "Jaroszowiec Olkuski", "Jasionna Łowicka", "Jaworzno Szczakowa", "Jesionka", "Jeżówka", "Juliusz", "Justynów", "Józefinów", "KATOWICE MUCHOWIEC STASZIC", "Kamień Łowicki", "Kamieńczyce", "Katowice", "Katowice Janów", "Katowice Much. KMB", "Katowice Szopienice Południowe", "Katowice Zawodzie", "Klimontów", "Klimontów APO", "Knapówka", "Kolumna", "Koluszki", "Koluszki PZS R145", "Koniecpol", "Kornelin", "Korytów", "Koszalin", "Kozioł", "Kozłów", "Kołobrzeg", "Krak.Prd Gt. P-Tr.", "Kraków Batowice", "Kraków Główny", "Kraków Olsza", "Kraków Przedmieście", "Kraków Płaszów PZS KPA", "Kraków Płaszów pzs KPA", "Krosnowa", "Kunów", "Kutno", "Kutno Azory", "Kęszyce", "Lipce Reymontowskie", "Lębork", "Maków", "Marcinków", "Marków", "Miechów", "Mikołajów", "Milanówek", "Milejów", "Międzyborów", "Mokra", "Moszczenica", "Myszków", "Myszków Mrzygłód", "Myszków Światowit", "Mysłaków", "Mysłowice", "Męcka Wola", "Męka", "Niedźwiada Łowicka", "Niedźwiedź", "Nowa Sucha", "Olkusz", "Olomouc Hlavní Nádraží", "Olszamowice", "Opoczno Południe", "Ostrava Hlavní Nádraží", "Ostrava-Svinov", "Ostrowiec Świętokrzyski", "Otrokovice", "Ozorków", "Ozorków Nowe Miasto", "Pabianice", "Pabianice Północne", "Parubice Hlavní Nádraží", "Parzniew", "Piasecznica", "Piastów", "Pilichowice", "Piotrków Trybunalski", "Piotrków Trybunalski Towarowy", "Plavec", "Praha Hlavní Nádraží", "Praha-Libeň", "Pruszków", "Przemiarki", "Przyłęk Duży", "Psary", "Puszcza Mariańska", "Płyćwia", "Přerov", "Raciborowice", "Radzice PZS R31", "Radziwiłłów Mazowiecki", "Retkinia", "Rogów", "Rokiciny", "Rozprza", "Seroki", "Sieradz", "Sieradz Męka", "Sieradz Warta", "Sierakowice Skierniewickie", "Sierpów", "Skarżysko Kościelne", "Skierniewice", "Skierniewice Rawka", "Skierniewice S PZS", "Sklęczki", "Smardzew", "Smroków", "Solec Kujawski", "Sosnowiec Dańdówka", "Sosnowiec Gł. pzs R52", "Sosnowiec Główny", "Sosnowiec Kazimierz", "Sosnowiec Maczki", "Sosnowiec Porąbka", "Sosnowiec Południowy", "Sprowa", "Stalowa Wola Rozwadów Towarowa", "Stara Wieś", "Starachowice", "Starachowice Michałów", "Starachowice Wschodnie", "Stare Grudze", "Starzyny", "Staré Město u Uher. Hradiště", "Staszic", "Staw Kunowski", "Stawiska", "Stryków", "Strzałki", "Styków Iłżecki", "Sucha Żyrardowska", "Swędów", "Szczepanowice", "Szeligi", "Sędzice", "Sędziszów", "Sławków", "Słomniki", "Słomniki Miasto", "Słotwiny", "Słupsk", "Tarnobrzeg", "Tunel", "Warszawa Centralna", "Warszawa Ochota", "Warszawa Powiśle", "Warszawa Stadion", "Warszawa Ursus", "Warszawa Ursus Niedźwiadek", "Warszawa Wschodnia", "Warszawa Wschodnia Towarowa", "Warszawa Włochy", "Warszawa Zachodnia", "Warszawa Śródmieście", "Wien Hauptbahnhof", "Wien Meidling", "Wien Westbahnhof", "Wiesiółka", "Witanów", "Witonia", "Wolbrom", "Wolbórka", "Wąchock", "Wągry", "Włoszczowa Północ", "Zarzecze", "Zarzecze APO", "Zastów", "Zawiercie", "Zawiercie Borowe Pole", "Zbąszynek", "Zduńska Wola", "Zduńska Wola Karsznice", "Zgierz", "Zgierz Jaracza", "Zgierz Kontrewers", "Zgierz Północ", "Zgierz Rudunki", "Zosinów", "Zábřeh na Moravě", "Złotniki Kutnowskie", "Česká Třebová", "Łask", "Łaznów", "Łazy", "Łazy Ła", "Łazy Łc", "Łowicz Główny", "Łowicz Główny PZS R1", "Łowicz Główny PZS R12", "Łowicz Główny PZS R24-R31", "Łowicz Przedmieście", "Łuczyce", "Łódź Andrzejów", "Łódź Andrzejów Szosa", "Łódź Arturówek", "Łódź Chojny", "Łódź Dąbrowa", "Łódź Dąbrowa PBS", "Łódź Kaliska", "Łódź Lublinek", "Łódź Marysin", "Łódź Olechów PZS R16", "Łódź Olechów PZS R3", "Łódź Olechów PZS R82", "Łódź Olechów Wiadukt", "Łódź Olechów Wschód", "Łódź Olechów Zachód", "Łódź Olechów Łoc", "Łódź Pabianicka", "Łódź Radogoszcz Wschód", "Łódź Radogoszcz Zachód", "Łódź Retkinia", "Łódź Stoki", "Łódź Warszawska", "Łódź Widzew", "Łódź Zarzew", "Łódź Żabieniec", "Łódź Żabieniec GT", "Łęczyca", "Żakowice", "Żakowice Południowe", "Żelisławice", "Żychlin", "Żyrardów"];
-
-        function normalizeStr(s) {
-          return s
-            .replace(/ł/g, 'l').replace(/Ł/g, 'L')
-            .normalize('NFD')
-            .replace(/[̀-ͯ]/g, '')
-            .toLowerCase();
-        }
-
-        function cfSetup(inputId, listId) {
-            const inp = document.getElementById(inputId);
-            const list = document.getElementById(listId);
-            let activeIdx = -1;
-
-            inp.addEventListener('input', () => {
-                const val = inp.value.trim();
-                if (!val) { list.classList.remove('open'); return; }
-                const normVal = normalizeStr(val);
-                const matches = STATIONS.filter(s => normalizeStr(s).includes(normVal)).slice(0, 10);
-                if (!matches.length) { list.classList.remove('open'); return; }
-                activeIdx = -1;
-                list.innerHTML = matches.map(s =>
-                    `<div class="conn-ac-item" data-val="${s}">${s}</div>`
-                ).join('');
-                list.classList.add('open');
-                list.querySelectorAll('.conn-ac-item').forEach(item => {
-                    item.addEventListener('mousedown', e => {
-                        inp.value = e.target.dataset.val;
-                        list.classList.remove('open');
-                    });
-                });
-            });
-
-            inp.addEventListener('keydown', e => {
-                const items = list.querySelectorAll('.conn-ac-item');
-                if (!items.length) return;
-                if (e.key === 'ArrowDown') activeIdx = Math.min(activeIdx + 1, items.length - 1);
-                else if (e.key === 'ArrowUp') activeIdx = Math.max(activeIdx - 1, 0);
-                else if (e.key === 'Enter') {
-                    if (activeIdx >= 0) { inp.value = items[activeIdx].dataset.val; list.classList.remove('open'); }
-                    else connSearch();
-                    e.preventDefault(); return;
-                } else return;
-                items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
-                e.preventDefault();
-            });
-
-            inp.addEventListener('blur', () => setTimeout(() => list.classList.remove('open'), 150));
-        }
-
-        cfSetup('cf-inp-from', 'cf-ac-from');
-        cfSetup('cf-inp-to',   'cf-ac-to');
-        cfSetup('cf-inp-via',  'cf-ac-via');
-
-        // Předvyplnění aktuálního času
-        (function() {
-            const now = new Date();
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('cf-inp-time').value = hh + ':' + mm;
-        })();
-
-        function connSearch() {
-            const from      = document.getElementById('cf-inp-from').value.trim();
-            const to        = document.getElementById('cf-inp-to').value.trim();
-            const via       = document.getElementById('cf-inp-via').value.trim();
-            const time      = document.getElementById('cf-inp-time').value || '00:00';
-            const transfers = document.getElementById('cf-inp-transfers').value;
-            if (!from || !to) { alert('Please fill in From and To fields.'); return; }
-            const params = new URLSearchParams({ from, to, time, transfers });
-            if (via) params.set('via', via);
-            window.location.href = 'search.html?' + params.toString();
-        }
-
         /* ── INFO PANEL ──────────────────────────────────────────── */
         const ICONS = { info: 'ℹ️', warning: '⚠️', update: '✅' };
 
@@ -579,7 +390,7 @@
     </script>
 
     <footer class="site-footer">
-        &copy; 2026 <strong>TheFloxiCz</strong> &nbsp;·&nbsp; Poslední aktualizace: 26. 11. 2026 &nbsp;·&nbsp; Verze 1.0
+        &copy; 2026 <strong>TheFloxiCz</strong> &nbsp;·&nbsp; Last update: 26. 11. 2026 &nbsp;·&nbsp; Version 1.0
     </footer>
 </body>
 </html>
